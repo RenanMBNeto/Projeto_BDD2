@@ -1,5 +1,3 @@
-# app/schemas.py (COMPLETO E ATUALIZADO)
-
 from app import ma
 from app.models import (
     Cliente,
@@ -7,6 +5,9 @@ from app.models import (
     Portfolio,
     Posicao,
     ProdutoFinanceiro,
+    Produto_Acao,  # Importação necessária
+    Produto_RendaFixa,  # Importação necessária
+    Produto_Fundo,  # Importação necessária
     Conta,
     QuestionarioSuitabilityVersao,
     Pergunta,
@@ -17,30 +18,40 @@ from app.models import (
 )
 from marshmallow import fields
 
+
+#  ESQUEMAS DE APOIO
+
 class OpcaoRespostaSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = OpcaoResposta
         fields = ("OpcaoID", "TextoOpcao", "Pontos")
 
+
 class PerguntaSchema(ma.SQLAlchemyAutoSchema):
     opcoes = fields.Nested(OpcaoRespostaSchema, many=True)
+
     class Meta:
         model = Pergunta
         fields = ("PerguntaID", "TextoPergunta", "opcoes")
 
+
 class QuestionarioSchema(ma.SQLAlchemyAutoSchema):
     perguntas = fields.Nested(PerguntaSchema, many=True)
+
     class Meta:
         model = QuestionarioSuitabilityVersao
         fields = ("VersaoID", "DataVigencia", "NomeQuestionario", "perguntas")
 
+
 class RespostaSuitabilitySchema(ma.SQLAlchemyAutoSchema):
     versao = fields.Nested(QuestionarioSchema, only=("VersaoID", "NomeQuestionario"))
+
     class Meta:
         model = RespostaSuitabilityCliente
         load_instance = True
         include_fk = True
         fields = ("RespostaID", "ClienteID", "VersaoID", "DataResposta", "PontuacaoTotal", "PerfilCalculado", "versao")
+
 
 class AssessorSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -48,33 +59,71 @@ class AssessorSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         exclude = ('SenhaHash', 'subordinados', 'clientes', 'auditorias')
 
+
 class ContaSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Conta
         fields = ("ContaID", "TipoConta", "Agencia", "NumeroConta", "Saldo")
 
+
+#  ESQUEMAS DE PRODUTOS FINANCEIROS (COM HERANÇA)
+
 class ProdutoFinanceiroSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = ProdutoFinanceiro
-        fields = ("ProdutoID", "Ticker", "NomeProduto", "ClasseAtivo", "NivelRiscoProduto")
+        # Campos gerais
+        fields = ("ProdutoID", "Ticker", "NomeProduto", "ClasseAtivo", "NivelRiscoProduto", "Emissor")
+
+
+class ProdutoAcaoSchema(ProdutoFinanceiroSchema):
+    class Meta:
+        model = Produto_Acao
+        include_fk = True
+        load_instance = True
+        # Campos base + específicos
+        fields = ("ProdutoID", "Ticker", "NomeProduto", "ClasseAtivo", "NivelRiscoProduto", "Emissor",
+                  "CNPJ_Empresa", "SetorAtuacao")
+
+
+class ProdutoRendaFixaSchema(ProdutoFinanceiroSchema):
+    class Meta:
+        model = Produto_RendaFixa
+        include_fk = True
+        load_instance = True
+        fields = ("ProdutoID", "Ticker", "NomeProduto", "ClasseAtivo", "NivelRiscoProduto", "Emissor",
+                  "Tipo", "DataVencimento", "Indexador", "TaxaContratada")
+
+
+class ProdutoFundoSchema(ProdutoFinanceiroSchema):
+    class Meta:
+        model = Produto_Fundo
+        include_fk = True
+        load_instance = True
+        fields = ("ProdutoID", "Ticker", "NomeProduto", "ClasseAtivo", "NivelRiscoProduto", "Emissor",
+                  "CNPJ_Fundo", "Gestor", "Administrador", "TaxaAdm", "TaxaPerf")
+
+
+#  ESQUEMAS DE PORTFOLIO E POSIÇÃO
 
 class PosicaoSchema(ma.SQLAlchemyAutoSchema):
+    # Usa o esquema base para aninhar (pode ser ajustado se quiser detalhes específicos aqui)
     produto = fields.Nested(ProdutoFinanceiroSchema())
     portfolio = fields.Nested("PortfolioSchema", only=("PortfolioID", "NomePortfolio"))
-    
+
     valor_mercado = fields.Decimal(dump_only=True, as_string=True)
     resultado_financeiro = fields.Decimal(dump_only=True, as_string=True)
-    
+
     class Meta:
         model = Posicao
         load_instance = True
         include_relationships = True
         include_fk = True
         fields = (
-            "PosicaoID", "PortfolioID", "ProdutoID", "Quantidade", "CustoMedio", 
-            "produto", "portfolio", 
+            "PosicaoID", "PortfolioID", "ProdutoID", "Quantidade", "CustoMedio",
+            "produto", "portfolio",
             "valor_mercado", "resultado_financeiro"
         )
+
 
 class PortfolioSchema(ma.SQLAlchemyAutoSchema):
     posicoes = fields.Nested("PosicaoSchema", many=True, exclude=("portfolio",))
@@ -92,21 +141,27 @@ class PortfolioSchema(ma.SQLAlchemyAutoSchema):
             "valor_mercado_total", "resultado_total_financeiro"
         )
 
+
+# ESQUEMAS DE GRUPOS E CLIENTES
+
 class GrupoEconomicoSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = GrupoEconomico
         load_instance = True
         fields = ("GrupoID", "NomeGrupo", "DataCriacao")
 
+
 class ClienteGrupoLinkSchema(ma.SQLAlchemyAutoSchema):
     grupo = fields.Nested(GrupoEconomicoSchema, only=("NomeGrupo",))
     cliente = fields.Nested("ClienteSchema", only=("ClienteID", "NomeCompleto"))
+
     class Meta:
         model = ClienteGrupoLink
         load_instance = True
         include_fk = True
         include_relationships = True
         fields = ("ClienteID", "GrupoID", "PapelNoGrupo", "cliente", "grupo")
+
 
 class ClienteSchema(ma.SQLAlchemyAutoSchema):
     assessor = fields.Nested(AssessorSchema, only=("Nome", "Email"))
@@ -128,6 +183,7 @@ class ClienteSchema(ma.SQLAlchemyAutoSchema):
             "grupos"
         )
 
+
 cliente_schema = ClienteSchema()
 clientes_schema = ClienteSchema(many=True)
 assessor_schema = AssessorSchema()
@@ -135,8 +191,14 @@ portfolio_schema = PortfolioSchema()
 portfolios_schema = PortfolioSchema(many=True)
 posicao_schema = PosicaoSchema()
 posicoes_schema = PosicaoSchema(many=True)
+
+# Instâncias de Produtos (Geral e Específicos)
 produto_schema = ProdutoFinanceiroSchema()
 produtos_schema = ProdutoFinanceiroSchema(many=True)
+produto_acao_schema = ProdutoAcaoSchema()
+produto_rf_schema = ProdutoRendaFixaSchema()
+produto_fundo_schema = ProdutoFundoSchema()
+
 conta_schema = ContaSchema()
 contas_schema = ContaSchema(many=True)
 
