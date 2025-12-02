@@ -1,0 +1,14 @@
+# Arquivos de configuração do PyCharm (não devem subir)
+.idea/
+
+# Ambientes virtuais (são pesados e recriáveis)
+venv/
+env/
+.venv/
+
+# Arquivos compilados do Python (lixo temporário)
+__pycache__/
+*.pyc
+
+# Arquivos de variáveis de ambiente/senhas (segurança!)
+.env
