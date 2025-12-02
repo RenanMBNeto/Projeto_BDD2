@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Mesa do Assessor | Chicoin$</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div>
+                <div class="brand">Chicoin$<br><span style="font-size:0.8rem; color:var(--text-muted); font-weight:400;">Advisor Desk</span></div>
+                <nav>
+                    <a href="#" class="active"><i class="fas fa-users"></i> Meus Clientes</a>
+                    <a href="#"><i class="fas fa-chart-line"></i> Performance</a>
+                    <a href="#"><i class="fas fa-tasks"></i> Pendências</a>
+                    <a href="#"><i class="fas fa-file-contract"></i> Compliance</a>
+                </nav>
+            </div>
+            <a href="#" onclick="logout()" style="color: var(--danger); display: flex; align-items: center; text-decoration: none;">
+                <i class="fas fa-sign-out-alt" style="margin-right: 10px;"></i> Sair
+            </a>
+        </aside>
+
+        <main class="main-content">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                <div>
+                    <h2 style="font-size: 2rem; color: #fff;">Visão Geral da Carteira</h2>
+                    <p style="color: var(--text-muted);">Bem-vindo, <span id="user-name" style="color: var(--accent-gold);">Assessor</span></p>
+                </div>
+                <button class="btn-premium" style="font-size: 0.9rem; padding: 10px 30px;">
+                    <i class="fas fa-plus"></i> Novo Cliente
+                </button>
+            </header>
+
+            <div class="stats-grid-dashboard">
+                <div class="stat-card">
+                    <div class="stat-label">Total Sob Gestão (AuM)</div>
+                    <div class="stat-value">R$ 145.2M</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Clientes Ativos</div>
+                    <div class="stat-value">32</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Alertas de Compliance</div>
+                    <div class="stat-value" style="color: var(--danger);">3</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h3 style="margin-bottom: 1.5rem; color: #fff; font-size: 1.3rem;">Carteira de Clientes</h3>
+                <table class="dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>Nome do Cliente</th>
+                            <th>CPF/CNPJ</th>
+                            <th>Email</th>
+                            <th>Status Compliance</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientes-body">
+                        <tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => initDashboard('assessor'));
+    </script>
+</body>
+</html>

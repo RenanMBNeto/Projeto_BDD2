@@ -29,3 +29,6 @@ def make_shell_context():
         'Ordem': Ordem,
         'Posicao': Posicao
     }
+
+if __name__ == '__main__':
+    app.run(debug=True)

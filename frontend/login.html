@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Acesso Seguro | Chicoin$</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <div class="login-wrapper">
+        <div class="glass-card">
+            <div class="logo" style="font-size: 2.2rem; margin-bottom: 0.5rem;">Chicoin$</div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2.5rem; letter-spacing: 1px; text-transform: uppercase;">Private Banking Access</p>
+
+            <form onsubmit="handleLogin(event)" style="text-align: left;">
+                <div class="input-group">
+                    <label style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.5px;">E-MAIL OU ID</label>
+                    <input type="email" id="email" class="input-field" placeholder="ex: cliente@chicoins.com" required style="background: rgba(0,0,0,0.4);">
+                </div>
+
+                <div class="input-group">
+                    <label style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.5px;">SENHA</label>
+                    <input type="password" id="senha" class="input-field" placeholder="••••••••" required style="background: rgba(0,0,0,0.4);">
+                </div>
+
+                <p id="error-msg" style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;"></p>
+
+                <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1.5rem; font-size: 1rem; padding: 16px;">
+                    Entrar no Portal
+                </button>
+            </form>
+
+            <a href="index.html" class="back-link">
+                <i class="fas fa-arrow-left"></i> Voltar ao site principal
+            </a>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+</body>
+</html>

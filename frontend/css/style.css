@@ -1,0 +1,235 @@
+/* frontend/css/style.css - VERSÃO FINAL (Links Dourados) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@600;700&display=swap');
+
+:root {
+    /* Paleta Dark Premium Chicoin$ */
+    --bg-color: #0b0e14;
+    --sidebar-bg: #11161d;
+    --card-bg: rgba(23, 29, 39, 0.7);
+    --card-border: rgba(255, 255, 255, 0.08);
+
+    --text-main: #f0f4f8;
+    --text-muted: #94a3b8;
+
+    --accent-gold: #d4af37;
+    --accent-gold-hover: #b4941f;
+    --accent-blue: #3b82f6;
+    --success: #10b981;
+    --danger: #ef4444;
+
+    --glass-effect: blur(12px);
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --container-width: 1200px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* === TIPOGRAFIA E UTILITÁRIOS === */
+h1, h2, h3, h4, .logo, .brand { font-family: 'Playfair Display', serif; font-weight: 700; }
+.container { max-width: var(--container-width); margin: 0 auto; padding: 0 2rem; width: 100%; }
+
+/* --- ATUALIZAÇÃO AQUI: Links Dourados no Hover --- */
+a { text-decoration: none; color: inherit; transition: var(--transition); }
+a:hover { color: var(--accent-gold); } /* Efeito Global */
+
+.hidden { display: none !important; }
+
+/* === HEADER FIXO === */
+header {
+    position: fixed;
+    top: 0; left: 0; width: 100%;
+    padding: 0.8rem 0;
+    z-index: 1000;
+    background: rgba(11, 14, 20, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+header .container { display: flex; justify-content: space-between; align-items: center; }
+
+.logo {
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    background: linear-gradient(45deg, #fff, var(--accent-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-links { display: flex; align-items: center; gap: 2rem; }
+.nav-links a { color: var(--text-main); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; position: relative; }
+/* O hover global já trata a cor, mas mantemos a barra inferior */
+.nav-links a:hover { color: var(--accent-gold); }
+
+.btn-login {
+    border: 1px solid var(--accent-gold);
+    padding: 8px 24px;
+    color: var(--accent-gold) !important;
+    border-radius: 4px;
+    font-size: 0.8rem !important;
+}
+.btn-login:hover { background: var(--accent-gold); color: #000 !important; box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
+
+/* === HERO SECTION === */
+.hero {
+    min-height: 85vh;
+    width: 100%;
+    background: linear-gradient(to bottom, rgba(11, 14, 20, 0.5), var(--bg-color)),
+                url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2670&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 6rem 2rem 2rem 2rem;
+}
+
+.hero h1 { font-size: 4rem; line-height: 1.1; margin-bottom: 1rem; color: #fff; max-width: 900px; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+.hero p { font-size: 1.25rem; max-width: 700px; color: #d1d5db; margin-bottom: 2.5rem; }
+
+.btn-premium {
+    background: linear-gradient(135deg, var(--accent-gold), #9e8223);
+    color: #000; /* Texto preto original */
+    padding: 14px 40px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+/* Importante: Forçar texto preto no hover para não ficar dourado sobre dourado */
+.btn-premium:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(212, 175, 55, 0.3);
+    background: var(--accent-gold);
+    color: #000 !important;
+}
+
+/* === GRID & CARDS === */
+section { padding: 5rem 0; }
+.section-title { text-align: center; font-size: 2.5rem; margin-bottom: 1rem; color: #fff; }
+.section-subtitle { text-align: center; color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto 4rem auto; }
+
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; }
+
+.feature-card {
+    background: var(--sidebar-bg);
+    padding: 2.5rem 2rem;
+    border-radius: 16px;
+    border: 1px solid var(--card-border);
+    transition: var(--transition);
+    text-align: center;
+}
+.feature-card:hover { transform: translateY(-8px); border-color: rgba(212, 175, 55, 0.4); background: rgba(30, 36, 48, 0.6); }
+.feature-icon { font-size: 2rem; color: var(--accent-gold); margin-bottom: 1.2rem; display: inline-block; }
+.feature-card h3 { font-size: 1.25rem; margin-bottom: 0.8rem; color: var(--text-main); }
+
+/* INSIGHTS */
+.insights-section { background: linear-gradient(to top, var(--bg-color), #0f131a); }
+.insight-card { background: var(--sidebar-bg); border-radius: 12px; border: 1px solid var(--card-border); overflow: hidden; transition: var(--transition); display: flex; flex-direction: column; }
+.insight-card:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.15); }
+.insight-image { height: 220px; width: 100%; object-fit: cover; opacity: 0.85; transition: var(--transition); }
+.insight-card:hover .insight-image { opacity: 1; }
+.insight-content { padding: 1.5rem; }
+.insight-date { font-size: 0.75rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 0.5rem; display: block; text-transform: uppercase; }
+.insight-content h3 { font-size: 1.1rem; margin-bottom: 1rem; line-height: 1.4; color: #fff; }
+.insight-link { font-size: 0.85rem; color: var(--text-muted); margin-top: auto; display: flex; align-items: center; gap: 0.5rem; }
+/* O hover global já cuida da cor, mas aqui garantimos o detalhe */
+.insight-link:hover { color: var(--accent-gold); gap: 0.8rem; }
+
+/* === DASHBOARD LAYOUT === */
+.dashboard-container { display: flex; min-height: 100vh; width: 100%; background: var(--bg-color); }
+.sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    padding: 2rem;
+    border-right: 1px solid var(--card-border);
+    display: flex; flex-direction: column; justify-content: space-between;
+    position: fixed; height: 100vh;
+}
+.sidebar .brand { font-size: 1.4rem; color: var(--white); margin-bottom: 3rem; display: block; text-align: center; }
+.sidebar nav a {
+    display: flex; align-items: center; padding: 12px 16px;
+    color: var(--text-muted); border-radius: 8px; margin-bottom: 0.5rem; font-size: 0.9rem;
+}
+.sidebar nav a:hover, .sidebar nav a.active { background: rgba(255, 255, 255, 0.05); color: var(--accent-gold); }
+.sidebar nav a i { margin-right: 12px; width: 20px; text-align: center; }
+
+.main-content { margin-left: 260px; flex: 1; padding: 3rem; width: calc(100% - 260px); }
+
+.stats-grid-dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2.5rem; }
+.stat-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 1.5rem; border-radius: 12px; position: relative; overflow: hidden; }
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--accent-gold); }
+.stat-label { color: var(--text-muted); font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem; }
+.stat-value { font-size: 2rem; font-weight: 600; color: #fff; }
+
+.table-container { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem; overflow-x: auto; }
+.dashboard-table { width: 100%; border-collapse: collapse; }
+.dashboard-table th { text-align: left; padding: 1rem; color: var(--text-muted); font-weight: 500; font-size: 0.85rem; border-bottom: 1px solid var(--card-border); text-transform: uppercase; }
+.dashboard-table td { padding: 1.2rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text-main); font-size: 0.95rem; }
+.dashboard-table tr:last-child td { border-bottom: none; }
+.dashboard-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Etiquetas de Status */
+.status-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+.status-aprovado { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.status-pendente { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.status-reprovado { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+
+/* LOGIN PAGE */
+.login-wrapper {
+    width: 100%; height: 100vh;
+    background: linear-gradient(rgba(11, 14, 20, 0.6), rgba(11, 14, 20, 0.8)),
+                url('https://images.unsplash.com/photo-1483366793517-eb5d7c47f8f3?q=80&w=2669&auto=format&fit=crop');
+    background-size: cover; background-position: center;
+    display: flex; justify-content: center; align-items: center;
+}
+.glass-card {
+    background: rgba(20, 25, 35, 0.75); backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 20px;
+    padding: 3.5rem 3rem; width: 100%; max-width: 450px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.6); text-align: center;
+    animation: fadeIn 0.8s ease-out;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.back-link { color: var(--text-muted); font-size: 0.85rem; margin-top: 1.5rem; display: inline-block; border-bottom: 1px solid transparent; }
+.back-link:hover { color: var(--accent-gold); border-color: var(--accent-gold); }
+.input-group { margin-bottom: 1.5rem; text-align: left; }
+.input-field {
+    width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--card-border);
+    padding: 14px; border-radius: 8px; color: #fff; outline: none; transition: var(--transition);
+}
+.input-field:focus { border-color: var(--accent-gold); }
+
+/* FOOTER */
+footer { background-color: var(--sidebar-bg); border-top: 1px solid var(--card-border); padding: 4rem 2rem 2rem; color: var(--text-muted); margin-top: auto; }
+.footer-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 3rem; max-width: 1200px; margin: 0 auto 3rem; }
+.footer-bottom { text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem; font-size: 0.8rem; }
+.footer-col ul { list-style: none; }
+.footer-col li { margin-bottom: 0.8rem; }
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .hero h1 { font-size: 2.8rem; }
+    .nav-links { display: none; }
+    .grid-3, .stats-grid-dashboard, .footer-grid { grid-template-columns: 1fr; }
+    .main-content { margin-left: 0; width: 100%; padding: 1.5rem; }
+    .sidebar { display: none; } /* Em produção, adicionaria menu mobile */
+}
