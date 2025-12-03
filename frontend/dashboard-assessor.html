@@ -22,69 +22,98 @@
         </aside>
 
         <main class="main-content">
-            <h2 class="header-title">Visão Geral da Carteira</h2>
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
+                <div>
+                    <h2 class="header-title">Olá, <span id="user-name" style="color: var(--accent-gold);">Assessor</span></h2>
+                    <p class="header-subtitle">Gestão de alta performance.</p>
+                </div>
+            </header>
 
             <section id="view-clientes" class="view-section fade-in">
                 <div class="stats-grid-dashboard">
                     <div class="stat-card">
                         <div class="stat-label">Clientes Totais</div>
-                        <div class="stat-value" id="total-clientes">0</div>
+                        <div class="stat-value" id="total-clientes">...</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">Pendências</div>
-                        <div class="stat-value" style="color: var(--danger);" id="total-pendencias">0</div>
+                        <div class="stat-value" style="color: var(--danger);" id="total-pendencias">...</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">AuM (Estimado)</div>
                         <div class="stat-value">R$ 145M</div>
                     </div>
                 </div>
+
                 <div class="glass-panel">
-                    <h3 style="color:#fff; margin-bottom:1rem;">Lista de Clientes</h3>
+                    <h3 style="color: #fff; margin-bottom: 1.5rem;">Carteira de Clientes</h3>
                     <table class="dashboard-table">
-                        <thead><tr><th>Nome</th><th>Documento</th><th>Email</th><th>Status</th><th>Ação</th></tr></thead>
-                        <tbody id="clientes-body"><tr><td colspan="5">Carregando...</td></tr></tbody>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Documento</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientes-body">
+                            <tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </section>
 
             <section id="view-novo" class="view-section hidden fade-in">
-                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
-                    <h3 style="color:var(--accent-gold); margin-bottom:1.5rem; text-align:center;">Cadastrar Novo Cliente</h3>
+                <div class="glass-panel" style="max-width: 700px; margin: 0 auto;">
+                    <h3 style="color: var(--accent-gold); margin-bottom: 2rem; text-align: center;">Cadastrar Novo Cliente</h3>
                     <form onsubmit="handleNewClient(event)">
-                        <div style="margin-bottom:1rem;">
-                            <label style="color:var(--text-muted); font-size:0.8rem;">Nome Completo</label>
-                            <input type="text" id="novo-nome" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:#fff; border-radius:8px;" required>
+                        <div class="input-group">
+                            <label style="color:var(--text-muted); display:block; margin-bottom:0.5rem;">NOME COMPLETO</label>
+                            <input type="text" id="novo-nome" class="input-premium" placeholder="Ex: João Silva" required>
                         </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
-                            <div>
-                                <label style="color:var(--text-muted); font-size:0.8rem;">CPF / CNPJ</label>
-                                <input type="text" id="novo-cpf" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:#fff; border-radius:8px;" required>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+                            <div class="input-group">
+                                <label style="color:var(--text-muted); display:block; margin-bottom:0.5rem;">CPF / CNPJ</label>
+                                <input type="text" id="novo-cpf" class="input-premium" placeholder="123.456.789-00" required>
                             </div>
-                            <div>
-                                <label style="color:var(--text-muted); font-size:0.8rem;">E-mail</label>
-                                <input type="email" id="novo-email" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:#fff; border-radius:8px;" required>
+                            <div class="input-group">
+                                <label style="color:var(--text-muted); display:block; margin-bottom:0.5rem;">E-MAIL</label>
+                                <input type="email" id="novo-email" class="input-premium" placeholder="cliente@email.com" required>
                             </div>
                         </div>
-                        <button type="submit" class="btn-premium" style="width:100%;">Criar Cadastro</button>
+                        <button type="submit" class="btn-premium" style="width: 100%;">Criar Cadastro</button>
                     </form>
+                </div>
+            </section>
+
+            <section id="view-performance" class="view-section hidden fade-in">
+                <div class="stats-grid-dashboard">
+                    <div class="stat-card">
+                        <div class="stat-label">Rentabilidade Média</div>
+                        <div class="stat-value" style="color: var(--success);">+12.5%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Novos Aportes (Mês)</div>
+                        <div class="stat-value">R$ 2.1M</div>
+                    </div>
+                </div>
+                <div class="glass-panel" style="text-align: center; padding: 4rem;">
+                    <i class="fas fa-chart-line" style="font-size: 4rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h3 style="color: #fff;">Gráficos de Performance</h3>
+                    <p style="color: var(--text-muted);">Em desenvolvimento: Integração com PowerBI.</p>
                 </div>
             </section>
 
             <section id="view-compliance" class="view-section hidden fade-in">
                 <div class="glass-panel">
-                    <h3 style="color:var(--danger); margin-bottom:1rem;">Alertas de Compliance</h3>
+                    <h3 style="color: var(--danger); margin-bottom: 1.5rem;">Alertas de Compliance</h3>
+                    <p style="color:var(--text-muted); margin-bottom:1rem;">Clientes aguardando aprovação de KYC/AML.</p>
                     <table class="dashboard-table">
-                        <thead><tr><th>Cliente</th><th>Status</th><th>Ação</th></tr></thead>
-                        <tbody id="compliance-body"></tbody>
+                        <thead><tr><th>Cliente</th><th>Status Atual</th><th>Ação</th></tr></thead>
+                        <tbody id="compliance-body">
+                             </tbody>
                     </table>
-                </div>
-            </section>
-
-            <section id="view-performance" class="view-section hidden fade-in">
-                <div style="text-align:center; padding:3rem; color:var(--text-muted);">
-                    <i class="fas fa-chart-area" style="font-size:3rem; margin-bottom:1rem;"></i>
-                    <p>Relatórios detalhados em breve.</p>
                 </div>
             </section>
         </main>

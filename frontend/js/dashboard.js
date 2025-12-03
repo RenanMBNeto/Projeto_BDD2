@@ -6,10 +6,14 @@ const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', curre
 async function initDashboard(role) {
     checkAuth();
 
-    // Exibir nome do usuário
+    // Atualiza o nome do usuário no topo
     const userName = localStorage.getItem('user_name');
     if (document.getElementById('user-name') && userName) {
         document.getElementById('user-name').textContent = userName;
+    }
+    // Atualiza também na aba Perfil
+    if (document.getElementById('perfil-nome') && userName) {
+        document.getElementById('perfil-nome').textContent = userName;
     }
 
     // --- LÓGICA DE NAVEGAÇÃO (ABAS) ---
@@ -18,28 +22,26 @@ async function initDashboard(role) {
 
     navButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // 1. Remove estado ativo de todos os botões
+            // 1. Remove a classe 'active' de todos os botões
             navButtons.forEach(b => b.classList.remove('active'));
 
-            // 2. Esconde todas as seções
+            // 2. Esconde todas as secções
             viewSections.forEach(s => s.classList.add('hidden'));
 
-            // 3. Ativa o botão clicado
-            // (Usa e.currentTarget para garantir que pegamos o botão mesmo se clicar no ícone dentro dele)
+            // 3. Identifica o botão clicado (mesmo se clicar no ícone <i>)
             const clickedBtn = e.currentTarget;
             clickedBtn.classList.add('active');
 
-            // 4. Mostra a seção correspondente
+            // 4. Mostra a secção correspondente
             const targetId = clickedBtn.getAttribute('data-target');
             const targetSection = document.getElementById(targetId);
 
             if (targetSection) {
                 targetSection.classList.remove('hidden');
-                // Adiciona animação suave se o CSS suportar
                 targetSection.classList.add('fade-in');
             }
 
-            // 5. Carrega dados específicos da aba se necessário
+            // 5. Carrega dados específicos da aba (se necessário)
             if (targetId === 'view-investir') loadProdutos();
             if (targetId === 'view-clientes') loadAssessorData();
         });
@@ -53,7 +55,7 @@ async function initDashboard(role) {
     }
 }
 
-// --- FUNÇÕES DO ASSESSOR ---
+// --- ASSESSOR: Carregar Dados ---
 async function loadAssessorData() {
     try {
         const token = localStorage.getItem('token');
@@ -61,11 +63,10 @@ async function loadAssessorData() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!res.ok) throw new Error("Falha na comunicação com o servidor");
-
+        if (!res.ok) return; // Se der erro, para aqui
         const clientes = await res.json();
 
-        // Atualiza KPIs (Cards do Topo)
+        // Atualiza KPIs
         const elTotal = document.getElementById('total-clientes');
         if (elTotal) elTotal.textContent = clientes.length || 0;
 
@@ -77,23 +78,21 @@ async function loadAssessorData() {
         const tbody = document.getElementById('clientes-body');
         if (tbody) {
             tbody.innerHTML = '';
-
             if (clientes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color: var(--text-muted);">Nenhum cliente encontrado.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted)">Nenhum cliente na carteira.</td></tr>';
             } else {
                 clientes.forEach(c => {
-                    // Define a cor do badge baseada no status
-                    let badgeClass = 'badge-gold';
-                    if (c.StatusCompliance === 'Aprovado') badgeClass = 'badge-green';
-                    if (c.StatusCompliance === 'Reprovado') badgeClass = 'badge-red';
+                    let badge = 'badge-gold';
+                    if (c.StatusCompliance === 'Aprovado') badge = 'badge-green';
+                    if (c.StatusCompliance === 'Reprovado') badge = 'badge-red';
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td style="color:#fff; font-weight:500;">${c.NomeCompleto}</td>
+                        <td style="color:#fff; font-weight:500">${c.NomeCompleto}</td>
                         <td>${c.CPF_CNPJ}</td>
                         <td>${c.Email}</td>
-                        <td><span class="badge ${badgeClass}">${c.StatusCompliance}</span></td>
-                        <td><button class="btn-premium" style="padding: 4px 12px; font-size: 0.7rem; width: auto;" onclick="alert('Detalhes do cliente: ${c.NomeCompleto}')">Ver</button></td>
+                        <td><span class="badge ${badge}">${c.StatusCompliance}</span></td>
+                        <td><button class="btn-premium" style="padding:4px 10px; font-size:0.7rem;">Ver</button></td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -105,71 +104,29 @@ async function loadAssessorData() {
         if(compBody) {
             compBody.innerHTML = '';
             if (pendentes.length === 0) {
-                compBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color: var(--text-muted);">Nenhuma pendência de compliance.</td></tr>';
+                 compBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-muted)">Tudo em dia.</td></tr>';
             } else {
                 pendentes.forEach(c => {
                     compBody.innerHTML += `
                         <tr>
                             <td style="color:#fff">${c.NomeCompleto}</td>
                             <td style="color:var(--danger)">${c.StatusCompliance}</td>
-                            <td><button class="btn-premium" style="padding:4px 12px; font-size:0.7rem; width: auto;" onclick="alert('Aprovação enviada para análise')">Analisar</button></td>
+                            <td><button class="btn-premium" style="padding:4px 12px; font-size:0.7rem;" onclick="alert('Enviado para análise!')">Aprovar</button></td>
                         </tr>`;
                 });
             }
         }
 
-    } catch (e) {
-        console.error("Erro ao carregar dados do assessor:", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// Lógica para criar novo cliente
-async function handleNewClient(e) {
-    e.preventDefault(); // Impede o recarregamento da página
-
-    const data = {
-        NomeCompleto: document.getElementById('novo-nome').value,
-        Email: document.getElementById('novo-email').value,
-        CPF_CNPJ: document.getElementById('novo-cpf').value
-    };
-
-    try {
-        const res = await fetch(`${API_URL}/clientes`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(data)
-        });
-
-        if(res.ok) {
-            alert('Cliente cadastrado com sucesso!');
-            document.getElementById('form-novo-cliente').reset();
-
-            // Recarrega a lista de clientes
-            await loadAssessorData();
-
-            // Simula clique na aba "Meus Clientes" para voltar para a lista
-            const btnList = document.querySelector('[data-target="view-clientes"]');
-            if(btnList) btnList.click();
-        } else {
-            const err = await res.json();
-            alert('Erro ao criar: ' + (err.erro || err.detalhes || 'Erro desconhecido'));
-        }
-    } catch(error) {
-        console.error(error);
-        alert('Erro de conexão.');
-    }
-}
-
-// --- FUNÇÕES DO CLIENTE ---
+// --- CLIENTE: Carregar Dados ---
 async function loadClientData() {
     try {
         const token = localStorage.getItem('token');
         const headers = { 'Authorization': `Bearer ${token}` };
 
-        // Busca dados em paralelo
+        // Busca Saldo e Portfolio em paralelo
         const [resConta, resPort] = await Promise.all([
             fetch(`${API_URL}/portal/minha-conta`, { headers }),
             fetch(`${API_URL}/portal/meu-portfolio`, { headers })
@@ -184,7 +141,6 @@ async function loadClientData() {
         if (resPort.ok) {
             const portfolio = await resPort.json();
 
-            // Atualiza Cards
             const elPatr = document.getElementById('patrimonio-val');
             if(elPatr) elPatr.textContent = moneyFormatter.format(portfolio.valor_mercado_total || 0);
 
@@ -192,11 +148,10 @@ async function loadClientData() {
             const elLucro = document.getElementById('lucro-val');
             if(elLucro) {
                 elLucro.textContent = moneyFormatter.format(lucro);
-                // Aplica cor verde se lucro >= 0, vermelha se negativo
                 elLucro.style.color = lucro >= 0 ? 'var(--success)' : 'var(--danger)';
             }
 
-            // Preenche Tabela
+            // Tabela de Carteira
             const tbody = document.getElementById('portfolio-body');
             if(tbody) {
                 tbody.innerHTML = '';
@@ -205,7 +160,7 @@ async function loadClientData() {
                         const rentab = parseFloat(pos.resultado_financeiro);
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td style="color: var(--accent-gold); font-weight:600;">${pos.produto.Ticker}</td>
+                            <td style="color:var(--accent-gold); font-weight:600">${pos.produto.Ticker}</td>
                             <td>${pos.produto.NomeProduto}</td>
                             <td>${parseFloat(pos.Quantidade).toFixed(2)}</td>
                             <td>${moneyFormatter.format(pos.valor_mercado)}</td>
@@ -214,16 +169,14 @@ async function loadClientData() {
                         tbody.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color: var(--text-muted);">Nenhum ativo em carteira.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:var(--text-muted)">Nenhum ativo na carteira.</td></tr>';
                 }
             }
         }
-    } catch (e) {
-        console.error("Erro ao carregar dados do cliente:", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// Carrega Produtos para a aba Investir
+// --- PRODUTOS (Para Investir) ---
 async function loadProdutos() {
     try {
         const token = localStorage.getItem('token');
@@ -234,32 +187,113 @@ async function loadProdutos() {
         if(grid) {
             grid.innerHTML = '';
             produtos.forEach(prod => {
-                const div = document.createElement('div');
-                div.className = 'product-card fade-in';
-                div.innerHTML = `
+                // Preço simulado para a demo
+                const precoSimulado = (Math.random() * 100 + 20).toFixed(2);
+
+                const card = document.createElement('div');
+                card.className = 'product-card fade-in';
+                card.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items: flex-start;">
                         <span class="badge badge-gold">${prod.ClasseAtivo}</span>
                         <span class="badge" style="border:1px solid var(--text-muted); color:var(--text-muted)">Risco ${prod.NivelRiscoProduto}/5</span>
                     </div>
-                    <h3 style="margin-top:1rem; color:#fff;">${prod.NomeProduto}</h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">${prod.Ticker} - ${prod.Emissor || 'Chicoin$'}</p>
-                    <button class="btn-premium" style="width:100%; font-size:0.8rem" onclick="alert('Ordem de compra enviada para processamento!')">Investir</button>
+                    <h3 style="color:#fff; margin-top:1rem; margin-bottom:0.5rem;">${prod.NomeProduto}</h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem;">${prod.Ticker} - ${prod.Emissor || 'Chicoin$'}</p>
+                    <p style="color:#fff; font-weight:bold; margin-bottom:1rem;">R$ ${precoSimulado}</p>
+                    <button class="btn-premium" style="width:100%; font-size:0.8rem" 
+                        onclick="openInvestModal(${prod.ProdutoID}, '${prod.Ticker}', ${precoSimulado})">
+                        Investir
+                    </button>
                 `;
-                grid.appendChild(div);
+                grid.appendChild(card);
             });
         }
     } catch (e) { console.error(e); }
 }
 
-// Utilitários
-function checkAuth() {
-    const token = localStorage.getItem('token');
-    if (!token) {
-        // Redireciona apenas se não estiver já na página de login
-        if(!window.location.pathname.includes('login.html')) {
-            window.location.href = 'login.html';
-        }
+// --- MODAL DE INVESTIMENTO ---
+let selectedProdutoId = null;
+
+function openInvestModal(id, ticker, preco) {
+    selectedProdutoId = id;
+    const modal = document.getElementById('invest-modal');
+    if(modal) {
+        document.getElementById('modal-titulo').textContent = `Investir em ${ticker}`;
+        document.getElementById('modal-preco').value = preco;
+        modal.classList.add('open');
     }
+}
+
+function closeModal() {
+    const modal = document.getElementById('invest-modal');
+    if(modal) modal.classList.remove('open');
+}
+
+async function confirmInvest() {
+    const qtd = document.getElementById('modal-qtd').value;
+    const preco = document.getElementById('modal-preco').value;
+
+    try {
+        const token = localStorage.getItem('token');
+        // 1. Pega ID do Portfolio
+        const portRes = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const portfolio = await portRes.json();
+
+        // 2. Envia Ordem
+        const res = await fetch(`${API_URL}/ordem`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({
+                portfolio_id: portfolio.PortfolioID,
+                produto_id: selectedProdutoId,
+                tipo_ordem: 'Compra',
+                quantidade: parseFloat(qtd),
+                preco_unitario: parseFloat(preco)
+            })
+        });
+
+        if(res.ok) {
+            alert('Ordem executada com sucesso!');
+            closeModal();
+            loadClientData(); // Atualiza saldo e tabela
+        } else {
+            const json = await res.json();
+            alert('Erro: ' + (json.erro || 'Falha ao investir'));
+        }
+    } catch(e) {
+        alert('Erro de conexão.');
+    }
+}
+
+// --- FUNÇÕES GERAIS ---
+async function handleNewClient(e) {
+    e.preventDefault();
+    const data = {
+        NomeCompleto: document.getElementById('novo-nome').value,
+        Email: document.getElementById('novo-email').value,
+        CPF_CNPJ: document.getElementById('novo-cpf').value
+    };
+    try {
+        const res = await fetch(`${API_URL}/clientes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(data)
+        });
+        if(res.ok) {
+            alert('Cliente criado com sucesso!');
+            document.getElementById('form-novo-cliente').reset();
+            await loadAssessorData(); // Recarrega a lista
+            // Volta para a aba de lista
+            const btn = document.querySelector('[data-target="view-clientes"]');
+            if(btn) btn.click();
+        } else {
+            alert('Erro ao criar cliente. Verifique os dados.');
+        }
+    } catch(e) { console.error(e); }
+}
+
+function checkAuth() {
+    if (!localStorage.getItem('token')) window.location.href = 'login.html';
 }
 
 function logout() {
