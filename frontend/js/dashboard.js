@@ -97,7 +97,6 @@ async function loadAssessorData() {
             });
         }
 
-        // Compliance
         const compBody = document.getElementById('compliance-body');
         if(compBody) {
             compBody.innerHTML = '';
@@ -172,7 +171,7 @@ async function handleNewProduct(e) {
         NivelRiscoProduto: parseInt(document.getElementById('prod-risco').value),
         CNPJ_Empresa: document.getElementById('prod-cnpj').value,
         ClasseAtivo: 'Acao',
-        Emissor: document.getElementById('prod-cnpj').value // Usa CNPJ como emissor padrão
+        Emissor: document.getElementById('prod-cnpj').value
     };
 
     try {
@@ -185,17 +184,14 @@ async function handleNewProduct(e) {
         if(res.ok) {
             showToast(`Produto ${data.Ticker.toUpperCase()} criado e disponível!`, 'success');
             document.getElementById('form-novo-produto').reset();
-            PRECOS_MOCK[data.Ticker.toUpperCase()] = 50.00; // Mocka o preço do novo produto
+            PRECOS_MOCK[data.Ticker.toUpperCase()] = 50.00;
         } else {
             showToast(`Erro ao criar produto: ${json.erro || json.detalhes}`, 'error');
         }
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
 
-// ==========================================
-// FUNÇÕES DO CLIENTE
-// ==========================================
-
+// --- CLIENTE ---
 async function loadClientData() {
     try {
         const token = localStorage.getItem('token');
@@ -247,29 +243,29 @@ async function loadClientData() {
 
 async function loadExtratoData() {
     try {
-        // Rota de conta simples é usada para simular o extrato
         const resConta = await fetch(`${API_URL}/portal/minha-conta`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         const resPort = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
 
         if (resConta.ok && resPort.ok) {
             const conta = await resConta.json();
             const portfolio = await resPort.json();
+            const saldoAtual = parseFloat(conta.Saldo);
             const tbody = document.getElementById('extrato-body');
 
             if(tbody) {
                 tbody.innerHTML = '';
+
                 // 1. Aporte Inicial (Fixo)
-                if (parseFloat(conta.Saldo) >= 100000 || portfolio.posicoes.length > 0) {
+                if (saldoAtual >= 100000 || portfolio.posicoes.length > 0) {
                      tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
                 }
 
                 // 2. Movimentações (Simulação de Compra - Se a ordem funcionar)
                 if (portfolio.posicoes && portfolio.posicoes.length > 0) {
                      portfolio.posicoes.forEach(pos => {
-                        // Esta é uma simulação. O valor do custo total é o gasto.
                         const custoTotal = parseFloat(pos.Quantidade) * parseFloat(pos.CustoMedio);
                         if (custoTotal > 0) {
-                           tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Compra</td><td>${pos.produto.Ticker}</td><td style="color:var(--danger)">- ${moneyFormatter.format(custoTotal)}</td></tr>`;
+                           tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Compra</td><td>${pos.produto.NomeProduto} (${pos.produto.Ticker})</td><td style="color:var(--danger)">- ${moneyFormatter.format(custoTotal)}</td></tr>`;
                         }
                     });
                 }
@@ -290,7 +286,7 @@ async function loadPerfilData() {
              const json = await res.json();
              showToast('Erro ao carregar perfil: ' + (json.erro || 'Autenticação Inválida.'), 'error');
         }
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
 }
 
 async function loadProdutos() {
@@ -342,13 +338,12 @@ async function confirmInvest() {
 
         if (!portRes.ok) {
              const json = await portRes.json();
-             showToast('Falha ao investir: ' + (json.erro || 'Autenticação Inválida. Refaça o login.'), 'error');
+             showToast('Falha ao investir: ' + (json.erro || 'Acesso negado ao portfólio. Refaça o login.'), 'error');
              closeModal();
              return;
         }
         const portfolio = await portRes.json();
 
-        // Verificação: Se PortfolioID não existe, aborta.
         if (!portfolio.PortfolioID) {
              showToast('Erro: Portfólio do cliente não encontrado. Tente recarregar.', 'error');
              closeModal();
