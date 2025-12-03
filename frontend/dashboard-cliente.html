@@ -7,6 +7,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
+    <div id="notification-container"></div>
+
     <div class="dashboard-container">
         <aside class="sidebar">
             <div>
@@ -22,20 +24,19 @@
         </aside>
 
         <main class="main-content">
-            <header style="margin-bottom: 2rem;">
-                <h2 class="header-title">Bem-vindo, <span id="user-name" style="color: var(--accent-gold);">Investidor</span></h2>
-                <p class="header-subtitle">Acompanhe a evolução do seu patrimônio.</p>
-            </header>
+            <div class="dashboard-header">
+                <h2 class="header-title">Minha Posição</h2>
+                <p class="header-subtitle">Bem-vindo, <span id="user-name" style="color: var(--accent-gold);">Investidor</span></p>
+            </div>
 
             <section id="view-home" class="view-section fade-in">
                 <div class="stats-grid-dashboard">
-                    <div class="stat-card"><div class="stat-label">Saldo em Conta</div><div class="stat-value" id="saldo-val">R$ ...</div></div>
-                    <div class="stat-card"><div class="stat-label">Total Investido</div><div class="stat-value" id="patrimonio-val">R$ ...</div></div>
-                    <div class="stat-card"><div class="stat-label">Lucro/Prejuízo</div><div class="stat-value" id="lucro-val">R$ ...</div></div>
+                    <div class="stat-card"><div class="stat-label">Saldo</div><div class="stat-value" id="saldo-val">...</div></div>
+                    <div class="stat-card"><div class="stat-label">Investido</div><div class="stat-value" id="patrimonio-val">...</div></div>
+                    <div class="stat-card"><div class="stat-label">Lucro</div><div class="stat-value" id="lucro-val">...</div></div>
                 </div>
-
                 <div class="glass-panel">
-                    <h3 style="color: #fff; margin-bottom: 1.5rem;">Minha Carteira</h3>
+                    <h3>Minha Carteira</h3>
                     <table class="dashboard-table">
                         <thead><tr><th>Ativo</th><th>Descrição</th><th>Qtd.</th><th>Valor Mercado</th><th>Resultado</th></tr></thead>
                         <tbody id="portfolio-body"><tr><td colspan="5">Carregando...</td></tr></tbody>
@@ -44,20 +45,17 @@
             </section>
 
             <section id="view-investir" class="view-section hidden fade-in">
-                <h3 style="color: #fff; margin-bottom: 1.5rem;">Oportunidades de Investimento</h3>
-                <div class="product-grid" id="products-grid">
-                    </div>
+                <h3 style="color: #fff; margin-bottom: 1.5rem;">Oportunidades</h3>
+                <div class="product-grid" id="products-grid"></div>
             </section>
 
             <section id="view-extrato" class="view-section hidden fade-in">
                 <div class="glass-panel">
-                    <h3 style="color: #fff; margin-bottom: 1rem;">Histórico de Movimentações</h3>
-                    <p style="color:var(--text-muted); margin-bottom:1rem;">Últimos 30 dias.</p>
+                    <h3>Extrato</h3>
                     <table class="dashboard-table">
-                        <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead>
-                        <tbody>
-                            <tr><td style="color:#fff">02/12/2025</td><td>Aporte</td><td>Transferência TED</td><td style="color:var(--success)">+ R$ 100.000,00</td></tr>
-                            <tr><td style="color:#fff">02/12/2025</td><td>Compra</td><td>PETR4</td><td style="color:var(--danger)">- R$ 5.000,00</td></tr>
+                        <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead>
+                        <tbody id="extrato-body">
+                            <tr><td>03/12/2025</td><td>Aporte Inicial</td><td style="color:var(--success)">+ R$ 100.000,00</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -65,11 +63,12 @@
 
             <section id="view-perfil" class="view-section hidden fade-in">
                 <div class="glass-panel" style="max-width: 600px;">
-                    <h3 style="color: #fff; margin-bottom: 1.5rem;">Meus Dados</h3>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
-                        <div><p class="stat-label">Nome</p><p style="color:#fff" id="perfil-nome">Carregando...</p></div>
-                        <div><p class="stat-label">Perfil de Risco</p><p style="color:var(--accent-gold)">Moderado</p></div>
-                        <div><p class="stat-label">Assessor Responsável</p><p style="color:#fff">Assessor Principal</p></div>
+                    <h3>Meus Dados</h3>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem; margin-top:1rem;">
+                        <div><p class="stat-label">Nome</p><p style="color:#fff; font-size:1.1rem;" id="perfil-nome-display">...</p></div>
+                        <div><p class="stat-label">E-mail</p><p style="color:#fff; font-size:1.1rem;" id="perfil-email">...</p></div>
+                        <div><p class="stat-label">Documento</p><p style="color:#fff; font-size:1.1rem;" id="perfil-doc">...</p></div>
+                        <div><p class="stat-label">Status</p><p style="color:var(--accent-gold); font-size:1.1rem;" id="perfil-status">...</p></div>
                     </div>
                 </div>
             </section>
@@ -78,23 +77,20 @@
 
     <div class="modal-overlay" id="invest-modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()" style="position: absolute; top: 1rem; right: 1rem; color: white; cursor: pointer; font-size: 1.5rem;">&times;</span>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
             <h3 id="modal-titulo" style="color: var(--accent-gold); margin-bottom: 1.5rem;">Investir</h3>
-
-            <div style="margin-bottom: 1rem;">
-                <label style="color:var(--text-muted); font-size:0.8rem; display:block; margin-bottom:0.5rem;">Quantidade</label>
+            <div class="input-wrapper">
+                <label>Quantidade</label>
                 <input type="number" id="modal-qtd" class="input-premium" value="1">
             </div>
-            <div style="margin-bottom: 2rem;">
-                <label style="color:var(--text-muted); font-size:0.8rem; display:block; margin-bottom:0.5rem;">Preço Estimado (R$)</label>
+            <div class="input-wrapper">
+                <label>Preço Unitário (Estimado)</label>
                 <input type="number" id="modal-preco" class="input-premium" readonly>
             </div>
-
             <button onclick="confirmInvest()" class="btn-premium" style="width: 100%;">Confirmar Ordem</button>
         </div>
     </div>
 
-    <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => initDashboard('cliente'));</script>
 </body>
