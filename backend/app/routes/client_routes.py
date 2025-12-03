@@ -42,10 +42,18 @@ def create_cliente():
         if not senha:
             return jsonify({"erro": "A senha é obrigatória para o cadastro de conta."}), 400
 
-        # NOVO: Define o status inicial (Pode ser 'Aprovado' ou 'Pendente' via frontend)
+        # Define o status inicial (Pode ser 'Aprovado' ou 'Pendente' via frontend)
         status_inicial = data.get('StatusComplianceInicial', 'Pendente')
         if status_inicial not in ['Pendente', 'Aprovado']:
             status_inicial = 'Pendente'
+
+        # NOVO: Obtém o perfil de risco inicial
+        perfil_risco_inicial = data.get('PerfilRiscoInicial', 'Conservador')
+
+        # Define Pontuação com base no perfil escolhido (para o Suitability)
+        # Pontuação mínima para cada perfil, respeitando a lógica de perfil (0-50 Conser., 50-80 Moderado, >80 Agressivo)
+        pontuacao_map = {'Conservador': 10, 'Moderado': 60, 'Agressivo': 90}
+        pontuacao_total = pontuacao_map.get(perfil_risco_inicial, 10)
 
         novo_cliente = Cliente(
             AssessorID=assessor_id_logado_int,
@@ -78,12 +86,12 @@ def create_cliente():
         )
         db.session.add(novo_portfolio)
 
-        # Inserir Resposta Suitability Padrão (Conservador)
+        # Inserir Resposta Suitability (usando perfil e pontuação do assessor)
         nova_resposta = RespostaSuitabilityCliente(
             ClienteID=novo_cliente.ClienteID,
             VersaoID=1,
-            PontuacaoTotal=0,
-            PerfilCalculado='Conservador'
+            PontuacaoTotal=pontuacao_total,
+            PerfilCalculado=perfil_risco_inicial
         )
         db.session.add(nova_resposta)
 

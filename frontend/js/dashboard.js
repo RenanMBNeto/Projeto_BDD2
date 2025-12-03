@@ -571,5 +571,45 @@ async function confirmInvest() {
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
 
+async function handleNewClient(e) {
+    e.preventDefault();
+
+    // Coleta o status do checkbox
+    const aprovarImediato = document.getElementById('aprovar-compliance-imediato').checked;
+
+    // NOVO: Coleta o perfil de risco
+    const perfilRisco = document.getElementById('novo-perfil-risco').value;
+
+    const data = {
+        NomeCompleto: document.getElementById('novo-nome').value,
+        Email: document.getElementById('novo-email').value,
+        CPF_CNPJ: document.getElementById('novo-cpf').value,
+        Senha: document.getElementById('novo-senha').value,
+        // Adiciona o status compliance inicial
+        StatusComplianceInicial: aprovarImediato ? 'Aprovado' : 'Pendente',
+        // NOVO: Adiciona o perfil de risco
+        PerfilRiscoInicial: perfilRisco
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/clientes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if(res.ok) {
+            showToast('Cliente criado com sucesso! Use a senha fornecida para login.', 'success');
+            const form = document.getElementById('form-novo-cliente');
+            if(form) form.reset();
+            await loadAssessorData();
+            document.querySelector('[data-target="view-clientes"]').click();
+        } else {
+            const msg = json.detalhes || json.erro;
+            showToast(`Falha ao criar: ${msg}. Use CPF/Email ÚNICOS.`, 'error');
+        }
+    } catch(e) { showToast('Erro de conexão.', 'error'); }
+}
+
 function checkAuth() { if (!localStorage.getItem('token')) window.location.href = 'login.html'; }
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }

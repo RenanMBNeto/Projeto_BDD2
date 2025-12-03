@@ -76,6 +76,21 @@
                             <label>SENHA DE ACESSO</label>
                             <input type="password" id="novo-senha" class="input-premium" required>
                         </div>
+
+                        <div class="input-wrapper">
+                            <label>PERFIL DE RISCO INICIAL</label>
+                            <select id="novo-perfil-risco" class="input-premium" required>
+                                <option value="Conservador">Conservador (Risco Baixo)</option>
+                                <option value="Moderado">Moderado (Risco Médio)</option>
+                                <option value="Agressivo">Agressivo (Risco Alto)</option>
+                            </select>
+                        </div>
+                        <div class="input-wrapper" style="margin-top: 1rem; text-align: left;">
+                            <input type="checkbox" id="aprovar-compliance-imediato" style="margin-right: 0.5rem;">
+                            <label for="aprovar-compliance-imediato" style="color: var(--success); font-weight: 500;">
+                                Aprovar Compliance Imediatamente (Permitir Investir)
+                            </label>
+                        </div>
                         <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1rem;">Criar Cadastro</button>
                     </form>
                 </div>
@@ -167,39 +182,5 @@
 
     <script src="js/dashboard.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => initDashboard('assessor'));</script>
-
-            <section id="view-novo" class="view-section hidden fade-in">
-                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
-                    <h3 style="color: var(--accent-gold); text-align: center;">Cadastrar Novo Cliente</h3>
-                    <form id="form-novo-cliente" onsubmit="handleNewClient(event)">
-                        <div class="input-wrapper">
-                            <label>NOME COMPLETO</label>
-                            <input type="text" id="novo-nome" class="input-premium" required>
-                        </div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
-                            <div class="input-wrapper">
-                                <label>CPF / CNPJ</label>
-                                <input type="text" id="novo-cpf" class="input-premium" required>
-                            </div>
-                            <div class="input-wrapper">
-                                <label>E-MAIL</label>
-                                <input type="email" id="novo-email" class="input-premium" required>
-                            </div>
-                        </div>
-                        <div class="input-wrapper">
-                            <label>SENHA DE ACESSO</label>
-                            <input type="password" id="novo-senha" class="input-premium" required>
-                        </div>
-                        <div class="input-wrapper" style="margin-top: 1rem; text-align: left;">
-                            <input type="checkbox" id="aprovar-compliance-imediato" style="margin-right: 0.5rem;">
-                            <label for="aprovar-compliance-imediato" style="color: var(--success); font-weight: 500;">
-                                Aprovar Compliance Imediatamente (Permitir Investir)
-                            </label>
-                        </div>
-                        <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1rem;">Criar Cadastro</button>
-                    </form>
-                </div>
-            </section>
-
 </body>
 </html>
