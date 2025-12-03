@@ -9,9 +9,9 @@ from app.models import (
     Posicao,
     Cliente,
     RespostaSuitabilityCliente,
-    HistoricoPreco  # <--- Adicionado novo import
+    HistoricoPreco
 )
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt  # Adicionado get_jwt
 from sqlalchemy import desc, exc
 from decimal import Decimal
 
@@ -21,10 +21,15 @@ bp = Blueprint('order', __name__)
 @bp.route('/ordem', methods=['POST'])
 @jwt_required()
 def execute_order():
-    # 1. Obter Dados e Assessor Logado
+    # 1. Obter Dados, Identidade e Role do Usuário Logado
     data = request.get_json()
     if not data:
         return jsonify({"erro": "Corpo da requisição vazio ou inválido"}), 400
+
+    claims = get_jwt()
+    role = claims.get("role")
+    user_id_str = get_jwt_identity()
+    user_id_int = int(user_id_str)
 
     required_fields = ["portfolio_id", "produto_id", "tipo_ordem", "quantidade", "preco_unitario"]
     if not all(field in data for field in required_fields):
@@ -47,17 +52,24 @@ def execute_order():
     if tipo_ordem not in ["Compra", "Venda"]:
         return jsonify({"erro": "Tipo de Ordem inválido. Use 'Compra' ou 'Venda'."}), 400
 
-    assessor_id_logado_str = get_jwt_identity()
-    assessor_id_logado_int = int(assessor_id_logado_str)
-
     try:
-        portfolio = db.session.query(Portfolio).join(Cliente).filter(
-            Portfolio.PortfolioID == portfolio_id,
-            Cliente.AssessorID == assessor_id_logado_int
-        ).first()
+        portfolio_query = Portfolio.query.filter(Portfolio.PortfolioID == portfolio_id)
+
+        if role == 'assessor':
+            # Assessor só pode operar em portfólios de seus clientes
+            portfolio = portfolio_query.join(Cliente).filter(
+                Cliente.AssessorID == user_id_int
+            ).first()
+        elif role == 'cliente':
+            # Cliente só pode operar em seus próprios portfólios
+            portfolio = portfolio_query.filter(
+                Portfolio.ClienteID == user_id_int
+            ).first()
+        else:
+            return jsonify({"erro": "Role de usuário não reconhecida."}), 403
 
         if not portfolio:
-            return jsonify({"erro": "Portfólio não encontrado ou não pertence a um cliente autorizado."}), 404
+            return jsonify({"erro": "Portfólio não encontrado ou não autorizado para este usuário."}), 404
 
         cliente_id = portfolio.ClienteID
 
@@ -97,7 +109,7 @@ def execute_order():
 
         if not permitido:
             return jsonify({
-                               "erro": f"Produto (Risco {risco_produto}) incompatível com o perfil '{perfil_cliente}' do cliente."}), 400
+                "erro": f"Produto (Risco {risco_produto}) incompatível com o perfil '{perfil_cliente}' do cliente."}), 400
 
         conta = Conta.query.filter_by(ClienteID=cliente_id).first()
         if not conta:
@@ -122,7 +134,7 @@ def execute_order():
             if not posicao_existente or posicao_existente.Quantidade < quantidade:
                 qtd_disponivel = posicao_existente.Quantidade if posicao_existente else 0
                 return jsonify({
-                                   "erro": f"Quantidade insuficiente para venda. Disponível: {qtd_disponivel}, Tentando vender: {quantidade}"}), 400
+                    "erro": f"Quantidade insuficiente para venda. Disponível: {qtd_disponivel}, Tentando vender: {quantidade}"}), 400
 
             posicao_existente.Quantidade -= quantidade
             tipo_mov = 'Resgate'
@@ -144,6 +156,7 @@ def execute_order():
             PortfolioID=portfolio_id,
             ProdutoID=produto_id,
             MovimentacaoID_Liquidacao=nova_movimentacao.MovimentacaoID,
+            TipoOrdem=tipo_ordem,
             Quantidade=quantidade,
             PrecoUnitario=preco_unitario,
             StatusOrdem='Executada'

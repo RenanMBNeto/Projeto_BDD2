@@ -1,7 +1,7 @@
 const API_URL = "http://127.0.0.1:5000";
 const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// PREÇOS FIXOS (Alinhados com o SQL para evitar erro de defasagem)
+// PREÇOS FIXOS (Mantido apenas para fallback caso o histórico de preço falhe)
 const PRECOS_MOCK = {
     'PETR4': 35.50,
     'VALE3': 68.20,
@@ -97,6 +97,7 @@ async function loadAssessorData() {
             });
         }
 
+        // Compliance
         const compBody = document.getElementById('compliance-body');
         if(compBody) {
             compBody.innerHTML = '';
@@ -171,7 +172,7 @@ async function handleNewProduct(e) {
         NivelRiscoProduto: parseInt(document.getElementById('prod-risco').value),
         CNPJ_Empresa: document.getElementById('prod-cnpj').value,
         ClasseAtivo: 'Acao',
-        Emissor: document.getElementById('prod-cnpj').value
+        Emissor: document.getElementById('prod-cnpj').value // Usa CNPJ como emissor padrão
     };
 
     try {
@@ -182,16 +183,19 @@ async function handleNewProduct(e) {
         });
         const json = await res.json();
         if(res.ok) {
-            showToast(`Produto ${data.Ticker.toUpperCase()} criado e disponível!`, 'success');
+            showToast(`Produto ${data.Ticker.toUpperCase()} criado e disponível! Preço inicial: R$ ${parseFloat(json.preco_inicial).toFixed(2)}`, 'success');
             document.getElementById('form-novo-produto').reset();
-            PRECOS_MOCK[data.Ticker.toUpperCase()] = 50.00;
+            // A remoção da linha que usava PRECOS_MOCK está correta, pois agora o preço é gerenciado pelo backend.
         } else {
             showToast(`Erro ao criar produto: ${json.erro || json.detalhes}`, 'error');
         }
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
 
-// --- CLIENTE ---
+// ==========================================
+// FUNÇÕES DO CLIENTE
+// ==========================================
+
 async function loadClientData() {
     try {
         const token = localStorage.getItem('token');
@@ -243,29 +247,29 @@ async function loadClientData() {
 
 async function loadExtratoData() {
     try {
+        // Rota de conta simples é usada para simular o extrato
         const resConta = await fetch(`${API_URL}/portal/minha-conta`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
         const resPort = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
 
         if (resConta.ok && resPort.ok) {
             const conta = await resConta.json();
             const portfolio = await resPort.json();
-            const saldoAtual = parseFloat(conta.Saldo);
             const tbody = document.getElementById('extrato-body');
 
             if(tbody) {
                 tbody.innerHTML = '';
-
                 // 1. Aporte Inicial (Fixo)
-                if (saldoAtual >= 100000 || portfolio.posicoes.length > 0) {
+                if (parseFloat(conta.Saldo) >= 100000 || portfolio.posicoes.length > 0) {
                      tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
                 }
 
                 // 2. Movimentações (Simulação de Compra - Se a ordem funcionar)
                 if (portfolio.posicoes && portfolio.posicoes.length > 0) {
                      portfolio.posicoes.forEach(pos => {
+                        // Esta é uma simulação. O valor do custo total é o gasto.
                         const custoTotal = parseFloat(pos.Quantidade) * parseFloat(pos.CustoMedio);
                         if (custoTotal > 0) {
-                           tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Compra</td><td>${pos.produto.NomeProduto} (${pos.produto.Ticker})</td><td style="color:var(--danger)">- ${moneyFormatter.format(custoTotal)}</td></tr>`;
+                           tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Compra</td><td>${pos.produto.Ticker}</td><td style="color:var(--danger)">- ${moneyFormatter.format(custoTotal)}</td></tr>`;
                         }
                     });
                 }
@@ -286,7 +290,7 @@ async function loadPerfilData() {
              const json = await res.json();
              showToast('Erro ao carregar perfil: ' + (json.erro || 'Autenticação Inválida.'), 'error');
         }
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function loadProdutos() {
@@ -299,7 +303,8 @@ async function loadProdutos() {
         if(grid) {
             grid.innerHTML = '';
             produtos.forEach(prod => {
-                const preco = PRECOS_MOCK[prod.Ticker] || 100.00;
+                // CORRIGIDO: Usa PrecoAtual do backend. Se não houver, usa o mock ou 100.00 como fallback.
+                const preco = prod.PrecoAtual || PRECOS_MOCK[prod.Ticker] || 100.00;
                 grid.innerHTML += `
                     <div class="product-card fade-in">
                         <div class="product-header">
@@ -338,12 +343,13 @@ async function confirmInvest() {
 
         if (!portRes.ok) {
              const json = await portRes.json();
-             showToast('Falha ao investir: ' + (json.erro || 'Acesso negado ao portfólio. Refaça o login.'), 'error');
+             showToast('Falha ao investir: ' + (json.erro || 'Autenticação Inválida. Refaça o login.'), 'error');
              closeModal();
              return;
         }
         const portfolio = await portRes.json();
 
+        // Verificação: Se PortfolioID não existe, aborta.
         if (!portfolio.PortfolioID) {
              showToast('Erro: Portfólio do cliente não encontrado. Tente recarregar.', 'error');
              closeModal();
@@ -367,7 +373,8 @@ async function confirmInvest() {
             closeModal();
             loadClientData();
         } else {
-            showToast('Erro: ' + (json.erro || 'Falha'), 'error');
+            // A rota /ordem agora está configurada para clientes, mas pode falhar por Suitability ou saldo
+            showToast('Erro: ' + (json.erro || json.mensagem || 'Falha'), 'error');
         }
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
