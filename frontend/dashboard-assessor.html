@@ -10,69 +10,87 @@
     <div class="dashboard-container">
         <aside class="sidebar">
             <div>
-                <div class="brand">Chicoin$<br><span style="font-size:0.8rem; color:var(--text-muted); font-weight:400;">Advisor Desk</span></div>
+                <div class="brand">Chicoin$ <span>Advisor</span></div>
                 <nav>
-                    <a href="#" class="active"><i class="fas fa-users"></i> Meus Clientes</a>
-                    <a href="#"><i class="fas fa-chart-line"></i> Performance</a>
-                    <a href="#"><i class="fas fa-tasks"></i> Pendências</a>
-                    <a href="#"><i class="fas fa-file-contract"></i> Compliance</a>
+                    <button class="nav-btn active" data-target="view-clientes"><i class="fas fa-users"></i> Meus Clientes</button>
+                    <button class="nav-btn" data-target="view-novo"><i class="fas fa-user-plus"></i> Novo Cliente</button>
+                    <button class="nav-btn" data-target="view-performance"><i class="fas fa-chart-line"></i> Performance</button>
+                    <button class="nav-btn" data-target="view-compliance"><i class="fas fa-file-contract"></i> Compliance</button>
                 </nav>
             </div>
-            <a href="#" onclick="logout()" style="color: var(--danger); display: flex; align-items: center; text-decoration: none;">
-                <i class="fas fa-sign-out-alt" style="margin-right: 10px;"></i> Sair
-            </a>
+            <button onclick="logout()" class="nav-btn" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </aside>
 
         <main class="main-content">
-            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem;">
-                <div>
-                    <h2 style="font-size: 2rem; color: #fff;">Visão Geral da Carteira</h2>
-                    <p style="color: var(--text-muted);">Bem-vindo, <span id="user-name" style="color: var(--accent-gold);">Assessor</span></p>
-                </div>
-                <button class="btn-premium" style="font-size: 0.9rem; padding: 10px 30px;">
-                    <i class="fas fa-plus"></i> Novo Cliente
-                </button>
-            </header>
+            <h2 class="header-title">Visão Geral da Carteira</h2>
 
-            <div class="stats-grid-dashboard">
-                <div class="stat-card">
-                    <div class="stat-label">Total Sob Gestão (AuM)</div>
-                    <div class="stat-value">R$ 145.2M</div>
+            <section id="view-clientes" class="view-section fade-in">
+                <div class="stats-grid-dashboard">
+                    <div class="stat-card">
+                        <div class="stat-label">Clientes Totais</div>
+                        <div class="stat-value" id="total-clientes">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Pendências</div>
+                        <div class="stat-value" style="color: var(--danger);" id="total-pendencias">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">AuM (Estimado)</div>
+                        <div class="stat-value">R$ 145M</div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Clientes Ativos</div>
-                    <div class="stat-value">32</div>
+                <div class="glass-panel">
+                    <h3 style="color:#fff; margin-bottom:1rem;">Lista de Clientes</h3>
+                    <table class="dashboard-table">
+                        <thead><tr><th>Nome</th><th>Documento</th><th>Email</th><th>Status</th><th>Ação</th></tr></thead>
+                        <tbody id="clientes-body"><tr><td colspan="5">Carregando...</td></tr></tbody>
+                    </table>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Alertas de Compliance</div>
-                    <div class="stat-value" style="color: var(--danger);">3</div>
-                </div>
-            </div>
+            </section>
 
-            <div class="table-container">
-                <h3 style="margin-bottom: 1.5rem; color: #fff; font-size: 1.3rem;">Carteira de Clientes</h3>
-                <table class="dashboard-table">
-                    <thead>
-                        <tr>
-                            <th>Nome do Cliente</th>
-                            <th>CPF/CNPJ</th>
-                            <th>Email</th>
-                            <th>Status Compliance</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="clientes-body">
-                        <tr><td colspan="5" style="text-align:center;">Carregando dados...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <section id="view-novo" class="view-section hidden fade-in">
+                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
+                    <h3 style="color:var(--accent-gold); margin-bottom:1.5rem; text-align:center;">Cadastrar Novo Cliente</h3>
+                    <form onsubmit="handleNewClient(event)">
+                        <div style="margin-bottom:1rem;">
+                            <label style="color:var(--text-muted); font-size:0.8rem;">Nome Completo</label>
+                            <input type="text" id="novo-nome" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:#fff; border-radius:8px;" required>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                            <div>
+                                <label style="color:var(--text-muted); font-size:0.8rem;">CPF / CNPJ</label>
+                                <input type="text" id="novo-cpf" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:#fff; border-radius:8px;" required>
+                            </div>
+                            <div>
+                                <label style="color:var(--text-muted); font-size:0.8rem;">E-mail</label>
+                                <input type="email" id="novo-email" style="width:100%; padding:10px; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:#fff; border-radius:8px;" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-premium" style="width:100%;">Criar Cadastro</button>
+                    </form>
+                </div>
+            </section>
+
+            <section id="view-compliance" class="view-section hidden fade-in">
+                <div class="glass-panel">
+                    <h3 style="color:var(--danger); margin-bottom:1rem;">Alertas de Compliance</h3>
+                    <table class="dashboard-table">
+                        <thead><tr><th>Cliente</th><th>Status</th><th>Ação</th></tr></thead>
+                        <tbody id="compliance-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="view-performance" class="view-section hidden fade-in">
+                <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                    <i class="fas fa-chart-area" style="font-size:3rem; margin-bottom:1rem;"></i>
+                    <p>Relatórios detalhados em breve.</p>
+                </div>
+            </section>
         </main>
     </div>
-
     <script src="js/auth.js"></script>
     <script src="js/dashboard.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => initDashboard('assessor'));
-    </script>
+    <script>document.addEventListener('DOMContentLoaded', () => initDashboard('assessor'));</script>
 </body>
 </html>

@@ -5,55 +5,37 @@ from flask_marshmallow import Marshmallow
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-
-class Config:
-    JWT_SECRET_KEY = 'diegosegredos'
-    
-    server = 'DESKTOP-FDSVF2E'
-    database = 'PrivateBankingDB'
-    username = 'sa'
-    password = 'etA$74&B8'
-    driver = 'ODBC Driver 17 for SQL Server'
-    
-    params = urllib.parse.quote_plus(
-         f'DRIVER={{{driver}}};'
-         f'SERVER={server};'
-         f'DATABASE={database};'
-         f'UID={username};'
-         f'PWD={password};'
-    )
-    SQLALCHEMY_DATABASE_URI = f"mssql+pyodbc:///?odbc_connect={params}"
-
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+from app.config import Config
 
 db = SQLAlchemy()
 ma = Marshmallow()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 
+
 def create_app():
-
     app = Flask(__name__)
-    
-    app.config.from_object(Config) 
+    app.config.from_object(Config)
 
-    CORS(app) 
+    CORS(app)
     db.init_app(app)
     ma.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    
+
+    # Importação das rotas
     from app.routes import (
-        auth_routes, 
-        client_routes, 
+        auth_routes,
+        client_routes,
         product_routes,
-        portfolio_routes, 
-        order_routes, 
+        portfolio_routes,
+        order_routes,
         suitability_routes,
         client_portal_routes,
         grupo_routes
     )
 
+    # Registo das Blueprints
     app.register_blueprint(auth_routes.bp)
     app.register_blueprint(client_routes.bp)
     app.register_blueprint(product_routes.bp)
