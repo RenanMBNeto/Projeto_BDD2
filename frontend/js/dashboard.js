@@ -56,7 +56,6 @@ async function initDashboard(role) {
     if (role === 'assessor') await loadAssessorData();
 }
 
-// --- NOTIFICAÇÕES (TOAST) ---
 function showToast(message, type = 'success') {
     const container = document.getElementById('notification-container');
     if (!container) return;
@@ -96,6 +95,15 @@ async function loadAssessorData() {
                     </tr>`;
             });
         }
+
+        const compBody = document.getElementById('compliance-body');
+        if(compBody) {
+            compBody.innerHTML = '';
+            if(pendentes.length === 0) compBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-muted)">Sem pendências.</td></tr>';
+            pendentes.forEach(c => {
+                compBody.innerHTML += `<tr><td style="color:#fff">${c.NomeCompleto}</td><td style="color:var(--danger)">${c.StatusCompliance}</td><td><button class="btn-premium" onclick="updateStatus(${c.ClienteID}, 'Aprovado')">Aprovar</button></td></tr>`;
+            });
+        }
     } catch (e) { console.error(e); }
 }
 
@@ -115,7 +123,7 @@ async function handleNewClient(e) {
         });
         const json = await res.json();
         if(res.ok) {
-            showToast('Cliente criado com sucesso!', 'success');
+            showToast('Cliente criado com sucesso! Use a senha fornecida para login.', 'success');
             const form = document.getElementById('form-novo-cliente');
             if(form) form.reset();
             await loadAssessorData();
@@ -173,6 +181,25 @@ async function loadClientData() {
     } catch (e) { console.error(e); }
 }
 
+async function loadExtratoData() {
+    try {
+        const resConta = await fetch(`${API_URL}/portal/minha-conta`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (resConta.ok) {
+            const conta = await resConta.json();
+            const saldoAtual = parseFloat(conta.Saldo);
+
+            const tbody = document.getElementById('extrato-body');
+            if(tbody) {
+                tbody.innerHTML = '';
+                // Simulação: se o saldo for o inicial, mostra o aporte inicial.
+                if (saldoAtual >= 100000) {
+                    tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
+                }
+            }
+        }
+    } catch (e) { console.error(e); }
+}
+
 async function loadPerfilData() {
     try {
         const res = await fetch(`${API_URL}/portal/meu-perfil`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
@@ -183,15 +210,6 @@ async function loadPerfilData() {
             document.getElementById('perfil-status').textContent = perfil.StatusCompliance;
         }
     } catch(e) { console.error(e); }
-}
-
-async function loadExtratoData() {
-    // Implementação para buscar dados de MovimentacaoConta se a rota existir
-    // Por enquanto, mostra um valor padrão.
-    const tbody = document.getElementById('extrato-body');
-    if(tbody) {
-        tbody.innerHTML = `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
-    }
 }
 
 async function loadProdutos() {
