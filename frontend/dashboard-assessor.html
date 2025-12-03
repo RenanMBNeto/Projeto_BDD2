@@ -30,6 +30,7 @@
                 <p class="header-subtitle">Gestão de alta performance.</p>
             </div>
 
+            <!-- CLIENTES -->
             <section id="view-clientes" class="view-section fade-in">
                 <div class="stats-grid-dashboard">
                     <div class="stat-card">
@@ -54,6 +55,7 @@
                 </div>
             </section>
 
+            <!-- NOVO CLIENTE (Com Senha) -->
             <section id="view-novo" class="view-section hidden fade-in">
                 <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
                     <h3 style="color: var(--accent-gold); text-align: center;">Cadastrar Novo Cliente</h3>
@@ -81,6 +83,7 @@
                 </div>
             </section>
 
+            <!-- CRIAR NOVO PRODUTO -->
             <section id="view-criar-produto" class="view-section hidden fade-in">
                 <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
                     <h3 style="color: var(--accent-gold); text-align: center;">Publicar Novo Investimento (Ação)</h3>
@@ -103,12 +106,13 @@
                                 <input type="text" id="prod-cnpj" class="input-premium" required>
                             </div>
                         </div>
-                        <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1rem;">Criar Investimento</button>
+                        <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1rem;">Publicar Investimento</button>
                     </form>
                 </div>
             </section>
 
 
+            <!-- PERFORMANCE (Gráfico Fictício) -->
             <section id="view-performance" class="view-section hidden fade-in">
                 <div class="glass-panel" style="padding: 3rem;">
                     <h3>Performance da Carteira</h3>
@@ -119,6 +123,7 @@
                 </div>
             </section>
 
+            <!-- COMPLIANCE -->
             <section id="view-compliance" class="view-section hidden fade-in">
                 <div class="glass-panel">
                     <h3 style="color: var(--danger);">Pendências</h3>
@@ -131,6 +136,7 @@
         </main>
     </div>
 
+    <!-- MODAL DETALHES CLIENTE (Usado pelo botão 'Ver') -->
     <div class="modal-overlay" id="client-modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeClientModal()">&times;</span>

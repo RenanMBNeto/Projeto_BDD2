@@ -1,7 +1,7 @@
 const API_URL = "http://127.0.0.1:5000";
 const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// PREÇOS FIXOS (Para evitar erro de defasagem e exibição instável)
+// PREÇOS FIXOS (Alinhados com o SQL para evitar erro de defasagem)
 const PRECOS_MOCK = {
     'PETR4': 35.50,
     'VALE3': 68.20,
@@ -12,13 +12,11 @@ const PRECOS_MOCK = {
 };
 
 // --- FUNÇÃO DE UTILIDADE ---
-// Garante que nomes com aspas simples (') não quebrem o código JS no botão onclick (Botão Ver)
 function safeEscape(str) {
     if (!str) return '';
     return str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-// --- INICIALIZAÇÃO GERAL ---
 async function initDashboard(role) {
     checkAuth();
 
@@ -58,7 +56,6 @@ async function initDashboard(role) {
     if (role === 'assessor') await loadAssessorData();
 }
 
-// --- NOTIFICAÇÕES (TOAST) ---
 function showToast(message, type = 'success') {
     const container = document.getElementById('notification-container');
     if (!container) return;
@@ -70,10 +67,7 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 4000);
 }
 
-// ==========================================
-// FUNÇÕES DO ASSESSOR
-// ==========================================
-
+// --- ASSESSOR ---
 async function loadAssessorData() {
     try {
         const res = await fetch(`${API_URL}/clientes`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
@@ -89,7 +83,6 @@ async function loadAssessorData() {
             tbody.innerHTML = '';
             clientes.forEach(c => {
                 let badge = c.StatusCompliance === 'Aprovado' ? 'badge-green' : 'badge-gold';
-                // BOTÃO VER - Abre modal com safeEscape
                 tbody.innerHTML += `
                     <tr>
                         <td style="color:#fff; font-weight:500">${c.NomeCompleto}</td>
@@ -178,7 +171,8 @@ async function handleNewProduct(e) {
         NomeProduto: document.getElementById('prod-nome').value,
         NivelRiscoProduto: parseInt(document.getElementById('prod-risco').value),
         CNPJ_Empresa: document.getElementById('prod-cnpj').value,
-        ClasseAtivo: 'Acao' // Foco em Ação por simplicidade
+        ClasseAtivo: 'Acao',
+        Emissor: document.getElementById('prod-cnpj').value // Usa CNPJ como emissor padrão
     };
 
     try {
@@ -191,7 +185,7 @@ async function handleNewProduct(e) {
         if(res.ok) {
             showToast(`Produto ${data.Ticker.toUpperCase()} criado e disponível!`, 'success');
             document.getElementById('form-novo-produto').reset();
-            PRECOS_MOCK[data.Ticker.toUpperCase()] = 50.00;
+            PRECOS_MOCK[data.Ticker.toUpperCase()] = 50.00; // Mocka o preço do novo produto
         } else {
             showToast(`Erro ao criar produto: ${json.erro || json.detalhes}`, 'error');
         }
@@ -215,7 +209,11 @@ async function loadClientData() {
         if (resConta.ok) {
             const conta = await resConta.json();
             document.getElementById('saldo-val').textContent = moneyFormatter.format(conta.Saldo);
+        } else {
+             const json = await resConta.json();
+             showToast('Erro de acesso à conta: ' + (json.erro || 'Autenticação Inválida.'), 'error');
         }
+
         if (resPort.ok) {
             const portfolio = await resPort.json();
             document.getElementById('patrimonio-val').textContent = moneyFormatter.format(portfolio.valor_mercado_total || 0);
@@ -249,17 +247,31 @@ async function loadClientData() {
 
 async function loadExtratoData() {
     try {
+        // Rota de conta simples é usada para simular o extrato
         const resConta = await fetch(`${API_URL}/portal/minha-conta`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
-        if (resConta.ok) {
-            const conta = await resConta.json();
-            const saldoAtual = parseFloat(conta.Saldo);
+        const resPort = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
 
+        if (resConta.ok && resPort.ok) {
+            const conta = await resConta.json();
+            const portfolio = await resPort.json();
             const tbody = document.getElementById('extrato-body');
+
             if(tbody) {
                 tbody.innerHTML = '';
-                // Simulação: se o saldo for o inicial, mostra o aporte inicial.
-                if (saldoAtual >= 100000) {
-                    tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
+                // 1. Aporte Inicial (Fixo)
+                if (parseFloat(conta.Saldo) >= 100000 || portfolio.posicoes.length > 0) {
+                     tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
+                }
+
+                // 2. Movimentações (Simulação de Compra - Se a ordem funcionar)
+                if (portfolio.posicoes && portfolio.posicoes.length > 0) {
+                     portfolio.posicoes.forEach(pos => {
+                        // Esta é uma simulação. O valor do custo total é o gasto.
+                        const custoTotal = parseFloat(pos.Quantidade) * parseFloat(pos.CustoMedio);
+                        if (custoTotal > 0) {
+                           tbody.innerHTML += `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Compra</td><td>${pos.produto.Ticker}</td><td style="color:var(--danger)">- ${moneyFormatter.format(custoTotal)}</td></tr>`;
+                        }
+                    });
                 }
             }
         }
@@ -274,6 +286,9 @@ async function loadPerfilData() {
             document.getElementById('perfil-email').textContent = perfil.Email;
             document.getElementById('perfil-doc').textContent = perfil.CPF_CNPJ;
             document.getElementById('perfil-status').textContent = perfil.StatusCompliance;
+        } else {
+             const json = await res.json();
+             showToast('Erro ao carregar perfil: ' + (json.erro || 'Autenticação Inválida.'), 'error');
         }
     } catch(e) { console.error(e); }
 }
@@ -281,9 +296,10 @@ async function loadPerfilData() {
 async function loadProdutos() {
     try {
         const res = await fetch(`${API_URL}/produtos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+        if (!res.ok) return;
+
         const produtos = await res.json();
         const grid = document.getElementById('products-grid');
-
         if(grid) {
             grid.innerHTML = '';
             produtos.forEach(prod => {
@@ -319,10 +335,26 @@ function closeModal() { document.getElementById('invest-modal').classList.remove
 async function confirmInvest() {
     const qtd = document.getElementById('modal-qtd').value;
     const preco = document.getElementById('modal-preco').value;
+    const token = localStorage.getItem('token');
+
     try {
-        const token = localStorage.getItem('token');
         const portRes = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${token}` } });
+
+        if (!portRes.ok) {
+             const json = await portRes.json();
+             showToast('Falha ao investir: ' + (json.erro || 'Autenticação Inválida. Refaça o login.'), 'error');
+             closeModal();
+             return;
+        }
         const portfolio = await portRes.json();
+
+        // Verificação: Se PortfolioID não existe, aborta.
+        if (!portfolio.PortfolioID) {
+             showToast('Erro: Portfólio do cliente não encontrado. Tente recarregar.', 'error');
+             closeModal();
+             return;
+        }
+
         const res = await fetch(`${API_URL}/ordem`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
