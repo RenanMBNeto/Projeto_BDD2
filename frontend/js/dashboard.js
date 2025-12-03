@@ -1,26 +1,30 @@
 const API_URL = "http://127.0.0.1:5000";
 const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// --- PREÇOS FIXOS (ALINHADOS COM O BANCO DE DADOS) ---
+// PREÇOS FIXOS
 const PRECOS_MOCK = {
-    'PETR4': 35.50,       // Igual ao seed_db.py
-    'TESOURO2030': 1050.00,
-    'FUNDOMOD11': 150.00,
+    'PETR4': 35.50,
     'VALE3': 68.20,
-    'BTC': 350000.00
+    'CDB2027': 1000.00,
+    'VERDE': 1500.00,
+    'TESOURO2030': 1050.00,
+    'FUNDOMOD11': 150.00
 };
+
+// --- FUNÇÃO DE UTILIDADE ---
+function safeEscape(str) {
+    if (!str) return '';
+    return str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
 
 async function initDashboard(role) {
     checkAuth();
 
     const userName = localStorage.getItem('user_name');
     if (userName) {
-        document.querySelectorAll('#user-name, #perfil-nome-display').forEach(el => {
-            if(el) el.textContent = userName;
-        });
+        document.querySelectorAll('#user-name, #perfil-nome-display').forEach(el => { if(el) el.textContent = userName; });
     }
 
-    // --- NAVEGAÇÃO ---
     const navButtons = document.querySelectorAll('.nav-btn');
     const viewSections = document.querySelectorAll('.view-section');
 
@@ -51,21 +55,15 @@ async function initDashboard(role) {
     if (role === 'assessor') await loadAssessorData();
 }
 
-// --- NOTIFICAÇÕES (TOAST) ---
 function showToast(message, type = 'success') {
     const container = document.getElementById('notification-container');
     if (!container) return;
-
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     const icon = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
     toast.innerHTML = `${icon} <span>${message}</span>`;
-
     container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 400);
-    }, 4000);
+    setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 4000);
 }
 
 // --- ASSESSOR ---
@@ -75,99 +73,72 @@ async function loadAssessorData() {
         if (!res.ok) return;
         const clientes = await res.json();
 
-        const elTotal = document.getElementById('total-clientes');
-        if(elTotal) elTotal.textContent = clientes.length;
-
-        const pendentes = clientes.filter(c => c.StatusCompliance !== 'Aprovado');
-        const elPend = document.getElementById('total-pendencias');
-        if(elPend) elPend.textContent = pendentes.length;
+        document.getElementById('total-clientes').textContent = clientes.length || 0;
+        document.getElementById('total-pendencias').textContent = clientes.filter(c => c.StatusCompliance !== 'Aprovado').length || 0;
 
         const tbody = document.getElementById('clientes-body');
         if(tbody) {
             tbody.innerHTML = '';
             clientes.forEach(c => {
                 let badge = c.StatusCompliance === 'Aprovado' ? 'badge-green' : 'badge-gold';
+                // Usando safeEscape para garantir que o botão "Ver" funcione
                 tbody.innerHTML += `
                     <tr>
                         <td style="color:#fff; font-weight:500">${c.NomeCompleto}</td>
                         <td>${c.CPF_CNPJ}</td>
                         <td>${c.Email}</td>
                         <td><span class="badge ${badge}">${c.StatusCompliance}</span></td>
-                        <td><button class="btn-premium" style="padding:6px 12px; font-size:0.7rem;">Ver</button></td>
-                    </tr>`;
-            });
-        }
-
-        // Compliance
-        const compBody = document.getElementById('compliance-body');
-        if(compBody) {
-            compBody.innerHTML = '';
-            if(pendentes.length === 0) compBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-muted)">Sem pendências.</td></tr>';
-            pendentes.forEach(c => {
-                compBody.innerHTML += `
-                    <tr>
-                        <td style="color:#fff">${c.NomeCompleto}</td>
-                        <td style="color:var(--danger)">${c.StatusCompliance}</td>
-                        <td><button class="btn-premium" style="padding:6px 12px; font-size:0.7rem;" onclick="updateStatus(${c.ClienteID}, 'Aprovado')">Aprovar</button></td>
+                        <td><button class="btn-premium" style="padding:6px 12px; font-size:0.7rem;" 
+                            onclick="openClientModal('${safeEscape(c.NomeCompleto)}', '${safeEscape(c.CPF_CNPJ)}', '${safeEscape(c.Email)}', '${safeEscape(c.StatusCompliance)}')">
+                            Ver
+                        </button></td>
                     </tr>`;
             });
         }
     } catch (e) { console.error(e); }
 }
 
-async function updateStatus(id, status) {
-    if(!confirm('Aprovar cliente?')) return;
-    try {
-        const res = await fetch(`${API_URL}/clientes/${id}/status-compliance`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify({ status: status })
-        });
-        if(res.ok) { showToast('Status atualizado!', 'success'); loadAssessorData(); }
-        else { showToast('Erro ao atualizar.', 'error'); }
-    } catch(e) { showToast('Erro de conexão.', 'error'); }
+function openClientModal(nome, doc, email, status) {
+    document.getElementById('modal-client-name').textContent = nome;
+    document.getElementById('modal-client-doc').textContent = doc;
+    document.getElementById('modal-client-email').textContent = email;
+    document.getElementById('modal-client-status').textContent = status;
+
+    const statusEl = document.getElementById('modal-client-status');
+    statusEl.style.color = status === 'Aprovado' ? 'var(--success)' : 'var(--danger)';
+
+    document.getElementById('client-modal').classList.add('open');
 }
+
+function closeClientModal() { document.getElementById('client-modal').classList.remove('open'); }
 
 async function handleNewClient(e) {
     e.preventDefault();
-
-    // Captura os dados
-    const nome = document.getElementById('novo-nome').value;
-    const email = document.getElementById('novo-email').value;
-    const cpf = document.getElementById('novo-cpf').value;
-
-    // Validação básica Frontend
-    if (!nome || !email || !cpf) {
-        showToast('Preencha todos os campos.', 'error');
-        return;
-    }
-
     const data = {
-        NomeCompleto: nome,
-        Email: email,
-        CPF_CNPJ: cpf
+        NomeCompleto: document.getElementById('novo-nome').value,
+        Email: document.getElementById('novo-email').value,
+        CPF_CNPJ: document.getElementById('novo-cpf').value
     };
-
     try {
         const res = await fetch(`${API_URL}/clientes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify(data)
         });
-
-        const json = await res.json(); // Sempre lê o JSON para saber o erro exato
-
+        const json = await res.json();
         if(res.ok) {
             showToast('Cliente criado com sucesso!', 'success');
-            document.getElementById('form-novo-cliente').reset();
+            // Reset do formulário corrigido pelo ID no HTML
+            const form = document.querySelector('form');
+            if(form) form.reset();
+
             await loadAssessorData();
             document.querySelector('[data-target="view-clientes"]').click();
         } else {
-            // Mostra o erro exato que veio do Python (ex: CPF duplicado)
-            const msgErro = json.detalhes || json.erro || 'Falha ao criar';
-            showToast('Erro: ' + msgErro, 'error');
+            const msg = json.detalhes || json.erro;
+            showToast(`Erro: ${msg}. Use CPF/Email ÚNICOS.`, 'error');
         }
-    } catch(e) { showToast('Erro de conexão com o servidor.', 'error'); }
+    } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
 
 // --- CLIENTE ---
@@ -183,21 +154,15 @@ async function loadClientData() {
 
         if (resConta.ok) {
             const conta = await resConta.json();
-            const el = document.getElementById('saldo-val');
-            if(el) el.textContent = moneyFormatter.format(conta.Saldo);
+            document.getElementById('saldo-val').textContent = moneyFormatter.format(conta.Saldo);
         }
-
         if (resPort.ok) {
             const portfolio = await resPort.json();
-            const elPatr = document.getElementById('patrimonio-val');
-            if(elPatr) elPatr.textContent = moneyFormatter.format(portfolio.valor_mercado_total || 0);
-
+            document.getElementById('patrimonio-val').textContent = moneyFormatter.format(portfolio.valor_mercado_total || 0);
+            const lucro = parseFloat(portfolio.resultado_total_financeiro || 0);
             const elLucro = document.getElementById('lucro-val');
-            if(elLucro) {
-                elLucro.textContent = moneyFormatter.format(portfolio.resultado_total_financeiro || 0);
-                const val = parseFloat(portfolio.resultado_total_financeiro || 0);
-                elLucro.style.color = val >= 0 ? 'var(--success)' : 'var(--danger)';
-            }
+            elLucro.textContent = moneyFormatter.format(lucro);
+            elLucro.style.color = lucro >= 0 ? 'var(--success)' : 'var(--danger)';
 
             const tbody = document.getElementById('portfolio-body');
             if(tbody) {
@@ -234,7 +199,6 @@ async function loadPerfilData() {
     } catch(e) { console.error(e); }
 }
 
-// --- PRODUTOS ---
 async function loadProdutos() {
     try {
         const res = await fetch(`${API_URL}/produtos`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
@@ -244,9 +208,7 @@ async function loadProdutos() {
         if(grid) {
             grid.innerHTML = '';
             produtos.forEach(prod => {
-                // USA O PREÇO FIXO DO MOCK PARA EVITAR ERRO DE DEFASAGEM
-                const preco = PRECOS_MOCK[prod.Ticker] || 50.00;
-
+                const preco = PRECOS_MOCK[prod.Ticker] || 100.00;
                 grid.innerHTML += `
                     <div class="product-card fade-in">
                         <div class="product-header">
@@ -269,9 +231,7 @@ async function loadProdutos() {
 let selectedProdutoId = null;
 function openInvestModal(id, ticker, preco) {
     selectedProdutoId = id;
-    const titulo = document.getElementById('modal-titulo');
-    if(titulo) titulo.textContent = `Investir em ${ticker}`;
-
+    document.getElementById('modal-titulo').textContent = `Investir em ${ticker}`;
     document.getElementById('modal-preco').value = preco;
     document.getElementById('invest-modal').classList.add('open');
 }
@@ -280,14 +240,10 @@ function closeModal() { document.getElementById('invest-modal').classList.remove
 async function confirmInvest() {
     const qtd = document.getElementById('modal-qtd').value;
     const preco = document.getElementById('modal-preco').value;
-
     try {
         const token = localStorage.getItem('token');
-        // Passo 1: Portfolio
         const portRes = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${token}` } });
         const portfolio = await portRes.json();
-
-        // Passo 2: Ordem
         const res = await fetch(`${API_URL}/ordem`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -299,16 +255,13 @@ async function confirmInvest() {
                 preco_unitario: parseFloat(preco)
             })
         });
-
-        const json = await res.json(); // Captura resposta
-
+        const json = await res.json();
         if(res.ok) {
-            showToast('Ordem de compra realizada com sucesso!', 'success');
+            showToast('Ordem executada!', 'success');
             closeModal();
             loadClientData();
         } else {
-            // Exibe o erro exato (Ex: Saldo insuficiente ou Perfil Inadequado)
-            showToast('Erro: ' + (json.erro || 'Falha ao investir'), 'error');
+            showToast('Erro: ' + (json.erro || 'Falha'), 'error');
         }
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }

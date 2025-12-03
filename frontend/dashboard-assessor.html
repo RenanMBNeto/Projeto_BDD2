@@ -48,15 +48,15 @@
                     <h3>Carteira de Clientes</h3>
                     <table class="dashboard-table">
                         <thead><tr><th>Nome</th><th>Documento</th><th>Email</th><th>Status</th><th>Ações</th></tr></thead>
-                        <tbody id="clientes-body"><tr><td colspan="5" style="text-align:center;">Carregando...</td></tr></tbody>
+                        <tbody id="clientes-body"></tbody>
                     </table>
                 </div>
             </section>
 
             <section id="view-novo" class="view-section hidden fade-in">
-                <div class="glass-panel" style="max-width: 700px; margin: 0 auto;">
+                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
                     <h3 style="color: var(--accent-gold); text-align: center;">Cadastrar Novo Cliente</h3>
-                    <form onsubmit="handleNewClient(event)">
+                    <form id="form-novo-cliente" onsubmit="handleNewClient(event)">
                         <div class="input-wrapper">
                             <label>NOME COMPLETO</label>
                             <input type="text" id="novo-nome" class="input-premium" required>
@@ -76,25 +76,25 @@
                 </div>
             </section>
 
-            <section id="view-performance" class="view-section hidden fade-in">
-                <div class="glass-panel" style="text-align: center; padding: 4rem;">
-                    <i class="fas fa-chart-area" style="font-size: 3rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
-                    <h3>Performance</h3>
-                    <p style="color: var(--text-muted);">Módulo em desenvolvimento.</p>
-                </div>
-            </section>
-
-            <section id="view-compliance" class="view-section hidden fade-in">
-                <div class="glass-panel">
-                    <h3 style="color: var(--danger);">Pendências</h3>
-                    <table class="dashboard-table">
-                        <thead><tr><th>Cliente</th><th>Status</th><th>Ação</th></tr></thead>
-                        <tbody id="compliance-body"></tbody>
-                    </table>
-                </div>
-            </section>
+            <section id="view-performance" class="view-section hidden fade-in"><div class="glass-panel"><h3>Performance</h3><p>Módulo em desenvolvimento.</p></div></section>
+            <section id="view-compliance" class="view-section hidden fade-in"><div class="glass-panel"><h3>Compliance</h3><p>Módulo em desenvolvimento.</p></div></section>
         </main>
     </div>
+
+    <div class="modal-overlay" id="client-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeClientModal()">&times;</span>
+            <h3 style="color: var(--accent-gold); margin-bottom: 1.5rem;">Detalhes do Cliente</h3>
+
+            <div style="margin-bottom: 1rem;"><p class="stat-label">Nome</p><p id="modal-client-name" style="color: #fff; font-size: 1.1rem;"></p></div>
+            <div style="margin-bottom: 1rem;"><p class="stat-label">CPF/CNPJ</p><p id="modal-client-doc" style="color: #fff;"></p></div>
+            <div style="margin-bottom: 1rem;"><p class="stat-label">Email</p><p id="modal-client-email" style="color: #fff;"></p></div>
+            <div style="margin-bottom: 2rem;"><p class="stat-label">Status Compliance</p><p id="modal-client-status" style="color: #fff;"></p></div>
+
+            <button onclick="closeClientModal()" class="btn-premium" style="width: 100%;">Fechar</button>
+        </div>
+    </div>
+
     <script src="js/dashboard.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => initDashboard('assessor'));</script>
 </body>
