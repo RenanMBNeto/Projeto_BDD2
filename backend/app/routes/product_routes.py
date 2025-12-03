@@ -51,30 +51,30 @@ def create_produto():
     try:
         novo_produto = None
 
-        # Lógica de Polimorfismo: Cria a instância correta baseada na classe
+        # Assume Acao como padrão para o formulário do assessor
         if classe == 'Acao':
             novo_produto = Produto_Acao(
-                Ticker=data['Ticker'],
+                Ticker=data['Ticker'].upper(),  # Normaliza Ticker
                 NomeProduto=data['NomeProduto'],
                 NivelRiscoProduto=data.get('NivelRiscoProduto'),
-                Emissor=data.get('Emissor'),
-                CNPJ_Empresa=data.get('CNPJ_Empresa'),
-                SetorAtuacao=data.get('SetorAtuacao')
+                Emissor=data.get('Emissor', 'Mercado'),
+                CNPJ_Empresa=data.get('CNPJ_Empresa', '00000000000000'),  # CNPJ Fictício se não informado
+                SetorAtuacao=data.get('SetorAtuacao', 'Outros')
             )
         elif classe == 'RendaFixa':
             novo_produto = Produto_RendaFixa(
-                Ticker=data['Ticker'],
+                Ticker=data['Ticker'].upper(),
                 NomeProduto=data['NomeProduto'],
                 NivelRiscoProduto=data.get('NivelRiscoProduto'),
                 Emissor=data.get('Emissor'),
                 Tipo=data.get('Tipo'),
-                DataVencimento=data.get('DataVencimento'),  # Formato YYYY-MM-DD
+                DataVencimento=data.get('DataVencimento'),
                 Indexador=data.get('Indexador'),
                 TaxaContratada=data.get('TaxaContratada')
             )
         elif classe == 'Fundo':
             novo_produto = Produto_Fundo(
-                Ticker=data['Ticker'],
+                Ticker=data['Ticker'].upper(),
                 NomeProduto=data['NomeProduto'],
                 NivelRiscoProduto=data.get('NivelRiscoProduto'),
                 Emissor=data.get('Emissor'),
@@ -92,9 +92,11 @@ def create_produto():
 
         return jsonify({"mensagem": "Produto criado com sucesso!", "id": novo_produto.ProdutoID}), 201
 
-    except exc.IntegrityError:
+    except exc.IntegrityError as e:
         db.session.rollback()
-        return jsonify({"erro": "Já existe um produto com este Ticker ou CNPJ/ISIN."}), 409
+        if 'UNIQUE constraint' in str(e) or 'Violation of UNIQUE KEY' in str(e):
+            return jsonify({"erro": "Já existe um produto com este Ticker ou CNPJ/ISIN."}), 409
+        return jsonify({"erro": "Erro ao criar produto", "detalhes": str(e)}), 500
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": "Erro ao criar produto", "detalhes": str(e)}), 500

@@ -1,7 +1,7 @@
 const API_URL = "http://127.0.0.1:5000";
 const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// PREÇOS FIXOS (Alinhados com o SQL para evitar erro de defasagem)
+// PREÇOS FIXOS (Para evitar erro de defasagem e exibição instável)
 const PRECOS_MOCK = {
     'PETR4': 35.50,
     'VALE3': 68.20,
@@ -12,11 +12,13 @@ const PRECOS_MOCK = {
 };
 
 // --- FUNÇÃO DE UTILIDADE ---
+// Garante que nomes com aspas simples (') não quebrem o código JS no botão onclick (Botão Ver)
 function safeEscape(str) {
     if (!str) return '';
     return str.toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+// --- INICIALIZAÇÃO GERAL ---
 async function initDashboard(role) {
     checkAuth();
 
@@ -56,6 +58,7 @@ async function initDashboard(role) {
     if (role === 'assessor') await loadAssessorData();
 }
 
+// --- NOTIFICAÇÕES (TOAST) ---
 function showToast(message, type = 'success') {
     const container = document.getElementById('notification-container');
     if (!container) return;
@@ -67,7 +70,10 @@ function showToast(message, type = 'success') {
     setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 400); }, 4000);
 }
 
-// --- ASSESSOR ---
+// ==========================================
+// FUNÇÕES DO ASSESSOR
+// ==========================================
+
 async function loadAssessorData() {
     try {
         const res = await fetch(`${API_URL}/clientes`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
@@ -75,13 +81,15 @@ async function loadAssessorData() {
         const clientes = await res.json();
 
         document.getElementById('total-clientes').textContent = clientes.length || 0;
-        document.getElementById('total-pendencias').textContent = clientes.filter(c => c.StatusCompliance !== 'Aprovado').length || 0;
+        const pendentes = clientes.filter(c => c.StatusCompliance !== 'Aprovado');
+        document.getElementById('total-pendencias').textContent = pendentes.length || 0;
 
         const tbody = document.getElementById('clientes-body');
         if(tbody) {
             tbody.innerHTML = '';
             clientes.forEach(c => {
                 let badge = c.StatusCompliance === 'Aprovado' ? 'badge-green' : 'badge-gold';
+                // BOTÃO VER - Abre modal com safeEscape
                 tbody.innerHTML += `
                     <tr>
                         <td style="color:#fff; font-weight:500">${c.NomeCompleto}</td>
@@ -96,15 +104,43 @@ async function loadAssessorData() {
             });
         }
 
+        // Compliance
         const compBody = document.getElementById('compliance-body');
         if(compBody) {
             compBody.innerHTML = '';
-            if(pendentes.length === 0) compBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-muted)">Sem pendências.</td></tr>';
+            if(pendentes.length === 0) compBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:1rem; color:var(--text-muted)">Tudo em dia.</td></tr>';
             pendentes.forEach(c => {
                 compBody.innerHTML += `<tr><td style="color:#fff">${c.NomeCompleto}</td><td style="color:var(--danger)">${c.StatusCompliance}</td><td><button class="btn-premium" onclick="updateStatus(${c.ClienteID}, 'Aprovado')">Aprovar</button></td></tr>`;
             });
         }
     } catch (e) { console.error(e); }
+}
+
+function openClientModal(nome, doc, email, status) {
+    document.getElementById('modal-client-name').textContent = nome;
+    document.getElementById('modal-client-doc').textContent = doc;
+    document.getElementById('modal-client-email').textContent = email;
+    document.getElementById('modal-client-status').textContent = status;
+
+    const statusEl = document.getElementById('modal-client-status');
+    statusEl.style.color = status === 'Aprovado' ? 'var(--success)' : 'var(--danger)';
+
+    document.getElementById('client-modal').classList.add('open');
+}
+
+function closeClientModal() { document.getElementById('client-modal').classList.remove('open'); }
+
+async function updateStatus(id, status) {
+    if(!confirm('Aprovar cliente?')) return;
+    try {
+        const res = await fetch(`${API_URL}/clientes/${id}/status-compliance`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ status: status })
+        });
+        if(res.ok) { showToast('Status atualizado!', 'success'); loadAssessorData(); }
+        else { showToast('Erro ao atualizar.', 'error'); }
+    } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
 
 async function handleNewClient(e) {
@@ -135,7 +171,37 @@ async function handleNewClient(e) {
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
 
-// --- CLIENTE ---
+async function handleNewProduct(e) {
+    e.preventDefault();
+    const data = {
+        Ticker: document.getElementById('prod-ticker').value,
+        NomeProduto: document.getElementById('prod-nome').value,
+        NivelRiscoProduto: parseInt(document.getElementById('prod-risco').value),
+        CNPJ_Empresa: document.getElementById('prod-cnpj').value,
+        ClasseAtivo: 'Acao' // Foco em Ação por simplicidade
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/produtos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if(res.ok) {
+            showToast(`Produto ${data.Ticker.toUpperCase()} criado e disponível!`, 'success');
+            document.getElementById('form-novo-produto').reset();
+            PRECOS_MOCK[data.Ticker.toUpperCase()] = 50.00;
+        } else {
+            showToast(`Erro ao criar produto: ${json.erro || json.detalhes}`, 'error');
+        }
+    } catch(e) { showToast('Erro de conexão.', 'error'); }
+}
+
+// ==========================================
+// FUNÇÕES DO CLIENTE
+// ==========================================
+
 async function loadClientData() {
     try {
         const token = localStorage.getItem('token');
