@@ -7,11 +7,11 @@ from app.models import (
     MovimentacaoConta,
     Ordem,
     Posicao,
-    Cliente,
+    Cliente,  # Já importado, mas é usado agora
     RespostaSuitabilityCliente,
     HistoricoPreco
 )
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt  # Adicionado get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy import desc, exc
 from decimal import Decimal
 
@@ -72,6 +72,15 @@ def execute_order():
             return jsonify({"erro": "Portfólio não encontrado ou não autorizado para este usuário."}), 404
 
         cliente_id = portfolio.ClienteID
+
+        # NOVO: Verificar Status Compliance ANTES de qualquer negociação (o ponto principal)
+        cliente = Cliente.query.get(cliente_id)
+        if cliente.StatusCompliance != 'Aprovado':
+            return jsonify({
+                "erro": "Operação não permitida.",
+                "mensagem": f"O Status Compliance do cliente é '{cliente.StatusCompliance}'. Apenas clientes 'Aprovado' podem negociar."
+            }), 403
+        # FIM NOVO
 
         produto = ProdutoFinanceiro.query.get(produto_id)
         if not produto:

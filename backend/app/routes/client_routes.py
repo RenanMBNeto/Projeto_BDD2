@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app import db
-from app.models import Cliente, Assessor, Conta, Portfolio, AuditoriaCompliance
+from app.models import Cliente, Assessor, Conta, Portfolio, AuditoriaCompliance, RespostaSuitabilityCliente
 from app.schemas import cliente_schema, clientes_schema
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -42,12 +42,17 @@ def create_cliente():
         if not senha:
             return jsonify({"erro": "A senha é obrigatória para o cadastro de conta."}), 400
 
+        # NOVO: Define o status inicial (Pode ser 'Aprovado' ou 'Pendente' via frontend)
+        status_inicial = data.get('StatusComplianceInicial', 'Pendente')
+        if status_inicial not in ['Pendente', 'Aprovado']:
+            status_inicial = 'Pendente'
+
         novo_cliente = Cliente(
             AssessorID=assessor_id_logado_int,
             CPF_CNPJ=data['CPF_CNPJ'],
             NomeCompleto=data['NomeCompleto'],
             Email=data['Email'],
-            StatusCompliance='Pendente'
+            StatusCompliance=status_inicial
         )
         # NOVO: Define a Senha Hash
         novo_cliente.set_password(senha)
@@ -72,6 +77,15 @@ def create_cliente():
             NomePortfolio='Carteira Principal'
         )
         db.session.add(novo_portfolio)
+
+        # Inserir Resposta Suitability Padrão (Conservador)
+        nova_resposta = RespostaSuitabilityCliente(
+            ClienteID=novo_cliente.ClienteID,
+            VersaoID=1,
+            PontuacaoTotal=0,
+            PerfilCalculado='Conservador'
+        )
+        db.session.add(nova_resposta)
 
         db.session.commit()
 

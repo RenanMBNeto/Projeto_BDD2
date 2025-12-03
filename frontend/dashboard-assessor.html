@@ -30,7 +30,6 @@
                 <p class="header-subtitle">Gestão de alta performance.</p>
             </div>
 
-            <!-- CLIENTES -->
             <section id="view-clientes" class="view-section fade-in">
                 <div class="stats-grid-dashboard">
                     <div class="stat-card">
@@ -55,7 +54,6 @@
                 </div>
             </section>
 
-            <!-- NOVO CLIENTE (Com Senha) -->
             <section id="view-novo" class="view-section hidden fade-in">
                 <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
                     <h3 style="color: var(--accent-gold); text-align: center;">Cadastrar Novo Cliente</h3>
@@ -83,13 +81,12 @@
                 </div>
             </section>
 
-            <!-- CRIAR NOVO PRODUTO -->
             <section id="view-criar-produto" class="view-section hidden fade-in">
                 <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
-                    <h3 style="color: var(--accent-gold); text-align: center;">Publicar Novo Investimento (Ação)</h3>
+                    <h3 style="color: var(--accent-gold); text-align: center;">Publicar Novo Investimento (Fundo)</h3>
                     <form id="form-novo-produto" onsubmit="handleNewProduct(event)">
                         <div class="input-wrapper">
-                            <label>TICKER (EX: MSFT)</label>
+                            <label>TICKER (EX: FUNDO11)</label>
                             <input type="text" id="prod-ticker" class="input-premium" required>
                         </div>
                          <div class="input-wrapper">
@@ -102,8 +99,28 @@
                                 <input type="number" id="prod-risco" class="input-premium" min="1" max="5" value="3" required>
                             </div>
                             <div class="input-wrapper">
-                                <label>CNPJ da Empresa</label>
-                                <input type="text" id="prod-cnpj" class="input-premium" required>
+                                <label>CNPJ do Fundo</label>
+                                <input type="text" id="prod-cnpj-fundo" class="input-premium" required>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div class="input-wrapper">
+                                <label>GESTOR</label>
+                                <input type="text" id="prod-gestor" class="input-premium" required>
+                            </div>
+                            <div class="input-wrapper">
+                                <label>ADMINISTRADOR</label>
+                                <input type="text" id="prod-admin" class="input-premium" required>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div class="input-wrapper">
+                                <label>TAXA ADM (%)</label>
+                                <input type="number" step="0.01" id="prod-taxa-adm" class="input-premium" value="0.5" required>
+                            </div>
+                            <div class="input-wrapper">
+                                <label>TAXA PERF (%)</label>
+                                <input type="number" step="0.01" id="prod-taxa-perf" class="input-premium" value="0.0" required>
                             </div>
                         </div>
                         <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1rem;">Publicar Investimento</button>
@@ -112,7 +129,6 @@
             </section>
 
 
-            <!-- PERFORMANCE (Gráfico Fictício) -->
             <section id="view-performance" class="view-section hidden fade-in">
                 <div class="glass-panel" style="padding: 3rem;">
                     <h3>Performance da Carteira</h3>
@@ -123,7 +139,6 @@
                 </div>
             </section>
 
-            <!-- COMPLIANCE -->
             <section id="view-compliance" class="view-section hidden fade-in">
                 <div class="glass-panel">
                     <h3 style="color: var(--danger);">Pendências</h3>
@@ -136,7 +151,6 @@
         </main>
     </div>
 
-    <!-- MODAL DETALHES CLIENTE (Usado pelo botão 'Ver') -->
     <div class="modal-overlay" id="client-modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeClientModal()">&times;</span>
@@ -153,5 +167,39 @@
 
     <script src="js/dashboard.js"></script>
     <script>document.addEventListener('DOMContentLoaded', () => initDashboard('assessor'));</script>
+
+            <section id="view-novo" class="view-section hidden fade-in">
+                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
+                    <h3 style="color: var(--accent-gold); text-align: center;">Cadastrar Novo Cliente</h3>
+                    <form id="form-novo-cliente" onsubmit="handleNewClient(event)">
+                        <div class="input-wrapper">
+                            <label>NOME COMPLETO</label>
+                            <input type="text" id="novo-nome" class="input-premium" required>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem;">
+                            <div class="input-wrapper">
+                                <label>CPF / CNPJ</label>
+                                <input type="text" id="novo-cpf" class="input-premium" required>
+                            </div>
+                            <div class="input-wrapper">
+                                <label>E-MAIL</label>
+                                <input type="email" id="novo-email" class="input-premium" required>
+                            </div>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>SENHA DE ACESSO</label>
+                            <input type="password" id="novo-senha" class="input-premium" required>
+                        </div>
+                        <div class="input-wrapper" style="margin-top: 1rem; text-align: left;">
+                            <input type="checkbox" id="aprovar-compliance-imediato" style="margin-right: 0.5rem;">
+                            <label for="aprovar-compliance-imediato" style="color: var(--success); font-weight: 500;">
+                                Aprovar Compliance Imediatamente (Permitir Investir)
+                            </label>
+                        </div>
+                        <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1rem;">Criar Cadastro</button>
+                    </form>
+                </div>
+            </section>
+
 </body>
 </html>

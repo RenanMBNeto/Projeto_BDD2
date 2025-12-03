@@ -108,6 +108,11 @@ def create_produto():
                 TaxaContratada=data.get('TaxaContratada')
             )
         elif classe == 'Fundo':
+            # Validação e Criação do Fundo
+            required_fundo_fields = ['CNPJ_Fundo', 'Gestor', 'Administrador']
+            if not all(data.get(field) is not None for field in required_fundo_fields):
+                 return jsonify({"erro": f"Campos obrigatórios para Fundo em falta: {required_fundo_fields}"}), 400
+
             novo_produto = Produto_Fundo(
                 Ticker=data['Ticker'].upper(),
                 NomeProduto=data['NomeProduto'],

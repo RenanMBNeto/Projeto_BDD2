@@ -138,12 +138,19 @@ async function updateStatus(id, status) {
 
 async function handleNewClient(e) {
     e.preventDefault();
+
+    // Coleta o status do checkbox
+    const aprovarImediato = document.getElementById('aprovar-compliance-imediato').checked;
+
     const data = {
         NomeCompleto: document.getElementById('novo-nome').value,
         Email: document.getElementById('novo-email').value,
         CPF_CNPJ: document.getElementById('novo-cpf').value,
-        Senha: document.getElementById('novo-senha').value
+        Senha: document.getElementById('novo-senha').value,
+        // Adiciona o status compliance inicial
+        StatusComplianceInicial: aprovarImediato ? 'Aprovado' : 'Pendente'
     };
+
     try {
         const res = await fetch(`${API_URL}/clientes`, {
             method: 'POST',
@@ -167,12 +174,20 @@ async function handleNewClient(e) {
 async function handleNewProduct(e) {
     e.preventDefault();
     const data = {
-        Ticker: document.getElementById('prod-ticker').value,
+        Ticker: document.getElementById('prod-ticker').value.toUpperCase(),
         NomeProduto: document.getElementById('prod-nome').value,
         NivelRiscoProduto: parseInt(document.getElementById('prod-risco').value),
-        CNPJ_Empresa: document.getElementById('prod-cnpj').value,
-        ClasseAtivo: 'Acao',
-        Emissor: document.getElementById('prod-cnpj').value // Usa CNPJ como emissor padrão
+
+        // Dados ESPECÍFICOS do Fundo
+        ClasseAtivo: 'Fundo',
+        CNPJ_Fundo: document.getElementById('prod-cnpj-fundo').value,
+        Gestor: document.getElementById('prod-gestor').value,
+        Administrador: document.getElementById('prod-admin').value,
+        TaxaAdm: parseFloat(document.getElementById('prod-taxa-adm').value),
+        TaxaPerf: parseFloat(document.getElementById('prod-taxa-perf').value),
+
+        // Emissor agora usa o Gestor como referência
+        Emissor: document.getElementById('prod-gestor').value
     };
 
     try {
@@ -185,7 +200,6 @@ async function handleNewProduct(e) {
         if(res.ok) {
             showToast(`Produto ${data.Ticker.toUpperCase()} criado e disponível! Preço inicial: R$ ${parseFloat(json.preco_inicial).toFixed(2)}`, 'success');
             document.getElementById('form-novo-produto').reset();
-            // A remoção da linha que usava PRECOS_MOCK está correta, pois agora o preço é gerenciado pelo backend.
         } else {
             showToast(`Erro ao criar produto: ${json.erro || json.detalhes}`, 'error');
         }
@@ -221,6 +235,11 @@ async function loadClientData() {
             const elLucro = document.getElementById('lucro-val');
             elLucro.textContent = moneyFormatter.format(lucro);
             elLucro.style.color = lucro >= 0 ? 'var(--success)' : 'var(--danger)';
+
+            // Remove títulos de simulação ao carregar dados reais
+            elLucro.removeAttribute('title');
+            document.getElementById('patrimonio-val').removeAttribute('title');
+
 
             const tbody = document.getElementById('portfolio-body');
             if(tbody) {
@@ -331,7 +350,180 @@ function openInvestModal(id, ticker, preco) {
     document.getElementById('modal-preco').value = preco;
     document.getElementById('invest-modal').classList.add('open');
 }
-function closeModal() { document.getElementById('invest-modal').classList.remove('open'); }
+
+// Função para fechar qualquer modal
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('open');
+}
+
+let currentTransactionType = null;
+function openTransactionModal(type) {
+    currentTransactionType = type;
+    const modalTitle = document.getElementById('transaction-modal-titulo');
+    const modalButton = document.getElementById('transaction-modal-btn');
+    const modalValue = document.getElementById('transaction-modal-valor');
+
+    modalTitle.textContent = type === 'Deposito' ? 'Novo Depósito' : 'Novo Saque';
+    modalButton.textContent = type === 'Deposito' ? 'Confirmar Depósito' : 'Confirmar Saque';
+    modalValue.value = '';
+
+    document.getElementById('transaction-modal').classList.add('open');
+}
+
+async function handleDepositOrWithdrawal() {
+    const valor = document.getElementById('transaction-modal-valor').value;
+    const token = localStorage.getItem('token');
+    const type = currentTransactionType;
+
+    if (!valor || parseFloat(valor) <= 0) {
+        showToast('O valor deve ser positivo.', 'error');
+        return;
+    }
+
+    const endpoint = type === 'Deposito' ? '/portal/deposito' : '/portal/saque';
+    const bodyData = { valor: parseFloat(valor) };
+
+    try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(bodyData)
+        });
+        const json = await res.json();
+
+        if(res.ok) {
+            showToast(`${type} processado com sucesso! Novo saldo: ${moneyFormatter.format(json.novo_saldo)}`, 'success');
+            closeModal('transaction-modal');
+            loadClientData();
+        } else {
+            showToast(`Falha no ${type}: ${json.erro || json.detalhes || 'Erro Desconhecido'}`, 'error');
+        }
+
+    } catch(e) {
+        showToast('Erro de conexão ao processar transação.', 'error');
+    }
+}
+
+
+// NOVO: Funções de Simulação
+
+async function openSimulationModal() {
+    const token = localStorage.getItem('token');
+    const container = document.getElementById('simulation-inputs-container');
+    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem;"><i class="fas fa-spinner fa-spin"></i> Carregando ativos...</p>';
+
+    // 1. Busca o portfólio para listar os ativos
+    try {
+        const resPort = await fetch(`${API_URL}/portal/meu-portfolio`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resPort.ok) throw new Error('Falha ao carregar portfólio para simulação.');
+
+        const portfolio = await resPort.json();
+        container.innerHTML = '';
+
+        if (!portfolio.posicoes || portfolio.posicoes.length === 0) {
+            container.innerHTML = '<p style="color: var(--danger); text-align: center; padding: 1rem;">Portfólio vazio. Não é possível simular.</p>';
+            document.getElementById('simulation-modal').classList.add('open');
+            return;
+        }
+
+        // 2. Gera campos de input dinamicamente
+        portfolio.posicoes.forEach(pos => {
+            const currentPrice = parseFloat(pos.valor_mercado) / parseFloat(pos.Quantidade);
+            const card = document.createElement('div');
+            card.className = 'input-wrapper';
+            card.innerHTML = `
+                <label>Novo Preço para ${pos.produto.Ticker} (Atual: ${moneyFormatter.format(currentPrice)})</label>
+                <input type="number" step="0.01" data-product-id="${pos.ProdutoID}" 
+                       value="${currentPrice.toFixed(2)}" class="input-premium" required>
+            `;
+            container.appendChild(card);
+        });
+
+        document.getElementById('simulation-modal').classList.add('open');
+
+    } catch (e) {
+        showToast(e.message || 'Erro ao preparar dados para simulação.', 'error');
+    }
+}
+
+async function handleSimulation(event) {
+    event.preventDefault();
+
+    const token = localStorage.getItem('token');
+    const inputElements = document.querySelectorAll('#simulation-inputs-container input');
+
+    const simulacao_precos = [];
+    inputElements.forEach(input => {
+        simulacao_precos.push({
+            ProdutoID: parseInt(input.getAttribute('data-product-id')),
+            NovoPreco: parseFloat(input.value)
+        });
+    });
+
+    try {
+        const res = await fetch(`${API_URL}/portal/meu-portfolio/simulacao`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ simulacao_precos: simulacao_precos })
+        });
+
+        const simulatedPortfolio = await res.json();
+
+        if (res.ok) {
+            closeModal('simulation-modal');
+            displaySimulatedResults(simulatedPortfolio);
+            showToast('Simulação executada com sucesso!', 'success');
+        } else {
+            showToast(`Erro na Simulação: ${simulatedPortfolio.erro || simulatedPortfolio.detalhes}`, 'error');
+        }
+
+    } catch (e) {
+        showToast('Erro de conexão durante a simulação.', 'error');
+    }
+}
+
+function displaySimulatedResults(portfolio) {
+    // 1. Atualiza os cards de estatísticas
+    const patrimonio = parseFloat(portfolio.valor_mercado_total || 0);
+    const lucro = parseFloat(portfolio.resultado_total_financeiro || 0);
+
+    document.getElementById('patrimonio-val').textContent = moneyFormatter.format(patrimonio);
+    const elLucro = document.getElementById('lucro-val');
+    elLucro.textContent = moneyFormatter.format(lucro);
+    elLucro.style.color = lucro >= 0 ? 'var(--success)' : 'var(--danger)';
+
+    // Adiciona indicador de simulação
+    elLucro.setAttribute('title', 'Simulado');
+    document.getElementById('patrimonio-val').setAttribute('title', 'Simulado');
+
+    // 2. Atualiza a tabela de portfólio
+    const tbody = document.getElementById('portfolio-body');
+    if(tbody) {
+        tbody.innerHTML = '';
+        portfolio.posicoes.forEach(pos => {
+            const rentab = parseFloat(pos.resultado_financeiro);
+            tbody.innerHTML += `
+                <tr class="simulated-row">
+                    <td style="color:var(--accent-gold); font-weight:600">${pos.produto.Ticker}</td>
+                    <td>${pos.produto.NomeProduto}</td>
+                    <td>${parseFloat(pos.Quantidade).toFixed(2)}</td>
+                    <td style="background:rgba(212, 175, 55, 0.1);">${moneyFormatter.format(pos.valor_mercado)}</td>
+                    <td style="color:${rentab >= 0 ? 'var(--success)' : 'var(--danger)'}">${moneyFormatter.format(rentab)}</td>
+                </tr>`;
+        });
+
+        // Adiciona botão para reverter a visualização
+        const revertButton = document.createElement('tr');
+        revertButton.innerHTML = `<td colspan="5" style="text-align:center; padding: 10px 0; border-bottom:none;">
+            <button class="btn-premium" onclick="loadClientData()" style="background: var(--accent-blue); padding: 8px 16px;">
+                <i class="fas fa-undo"></i> Voltar à Posição Atual
+            </button>
+        </td>`;
+        tbody.appendChild(revertButton);
+    }
+}
+
+// FIM NOVO
 
 async function confirmInvest() {
     const qtd = document.getElementById('modal-qtd').value;
@@ -344,7 +536,7 @@ async function confirmInvest() {
         if (!portRes.ok) {
              const json = await portRes.json();
              showToast('Falha ao investir: ' + (json.erro || 'Autenticação Inválida. Refaça o login.'), 'error');
-             closeModal();
+             closeModal('invest-modal');
              return;
         }
         const portfolio = await portRes.json();
@@ -352,7 +544,7 @@ async function confirmInvest() {
         // Verificação: Se PortfolioID não existe, aborta.
         if (!portfolio.PortfolioID) {
              showToast('Erro: Portfólio do cliente não encontrado. Tente recarregar.', 'error');
-             closeModal();
+             closeModal('invest-modal');
              return;
         }
 
@@ -370,7 +562,7 @@ async function confirmInvest() {
         const json = await res.json();
         if(res.ok) {
             showToast('Ordem executada!', 'success');
-            closeModal();
+            closeModal('invest-modal');
             loadClientData();
         } else {
             // A rota /ordem agora está configurada para clientes, mas pode falhar por Suitability ou saldo
