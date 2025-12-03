@@ -14,6 +14,71 @@ from app.models import (
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from sqlalchemy import desc, exc
 from decimal import Decimal
+from flask import Blueprint, jsonify, request
+from app import db
+from app.models import Cliente, Assessor, Conta, Portfolio, AuditoriaCompliance
+from app.schemas import cliente_schema, clientes_schema
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+bp = Blueprint('client', __name__)
+
+
+# ... (funções get_clientes, get_cliente, update_cliente, delete_cliente omitidas por brevidade) ...
+
+@bp.route('/clientes', methods=['POST'])
+@jwt_required()
+def create_cliente():
+    data = request.get_json()
+    assessor_id_logado_str = get_jwt_identity()
+    assessor_id_logado_int = int(assessor_id_logado_str)
+
+    try:
+        # NOVO: Exige Senha
+        senha = data.get('Senha')
+        if not senha:
+            return jsonify({"erro": "A senha é obrigatória para o cadastro de conta."}), 400
+
+        novo_cliente = Cliente(
+            AssessorID=assessor_id_logado_int,
+            CPF_CNPJ=data['CPF_CNPJ'],
+            NomeCompleto=data['NomeCompleto'],
+            Email=data['Email'],
+            StatusCompliance='Pendente'
+        )
+        # NOVO: Define a Senha Hash
+        novo_cliente.set_password(senha)
+
+        db.session.add(novo_cliente)
+
+        db.session.flush()
+
+        numero_conta_gerado = f"C-{novo_cliente.ClienteID:07d}"
+
+        nova_conta = Conta(
+            ClienteID=novo_cliente.ClienteID,
+            TipoConta='Conta Investimento',
+            Agencia='0001',
+            NumeroConta=numero_conta_gerado,
+            Saldo=0.00
+        )
+        db.session.add(nova_conta)
+
+        novo_portfolio = Portfolio(
+            ClienteID=novo_cliente.ClienteID,
+            NomePortfolio='Carteira Principal'
+        )
+        db.session.add(novo_portfolio)
+
+        db.session.commit()
+
+        return cliente_schema.jsonify(novo_cliente), 201
+
+    except Exception as e:
+        db.session.rollback()
+        if 'UNIQUE constraint' in str(e) or 'Violation of UNIQUE KEY' in str(e):
+            return jsonify({"erro": "Erro ao criar cliente", "detalhes": "CPF/CNPJ ou Email já cadastrado."}), 409
+
+        return jsonify({"erro": "Erro ao criar cliente", "detalhes": str(e)}), 400
 
 bp = Blueprint('order', __name__)
 

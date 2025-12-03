@@ -1,7 +1,7 @@
 const API_URL = "http://127.0.0.1:5000";
 const moneyFormatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// PREÇOS FIXOS
+// PREÇOS FIXOS (Alinhados com o SQL para evitar erro de defasagem)
 const PRECOS_MOCK = {
     'PETR4': 35.50,
     'VALE3': 68.20,
@@ -48,6 +48,7 @@ async function initDashboard(role) {
             if (targetId === 'view-clientes') loadAssessorData();
             if (targetId === 'view-compliance') loadAssessorData();
             if (targetId === 'view-perfil' && role === 'cliente') loadPerfilData();
+            if (targetId === 'view-extrato' && role === 'cliente') loadExtratoData();
         });
     });
 
@@ -55,6 +56,7 @@ async function initDashboard(role) {
     if (role === 'assessor') await loadAssessorData();
 }
 
+// --- NOTIFICAÇÕES (TOAST) ---
 function showToast(message, type = 'success') {
     const container = document.getElementById('notification-container');
     if (!container) return;
@@ -81,7 +83,6 @@ async function loadAssessorData() {
             tbody.innerHTML = '';
             clientes.forEach(c => {
                 let badge = c.StatusCompliance === 'Aprovado' ? 'badge-green' : 'badge-gold';
-                // Usando safeEscape para garantir que o botão "Ver" funcione
                 tbody.innerHTML += `
                     <tr>
                         <td style="color:#fff; font-weight:500">${c.NomeCompleto}</td>
@@ -98,26 +99,13 @@ async function loadAssessorData() {
     } catch (e) { console.error(e); }
 }
 
-function openClientModal(nome, doc, email, status) {
-    document.getElementById('modal-client-name').textContent = nome;
-    document.getElementById('modal-client-doc').textContent = doc;
-    document.getElementById('modal-client-email').textContent = email;
-    document.getElementById('modal-client-status').textContent = status;
-
-    const statusEl = document.getElementById('modal-client-status');
-    statusEl.style.color = status === 'Aprovado' ? 'var(--success)' : 'var(--danger)';
-
-    document.getElementById('client-modal').classList.add('open');
-}
-
-function closeClientModal() { document.getElementById('client-modal').classList.remove('open'); }
-
 async function handleNewClient(e) {
     e.preventDefault();
     const data = {
         NomeCompleto: document.getElementById('novo-nome').value,
         Email: document.getElementById('novo-email').value,
-        CPF_CNPJ: document.getElementById('novo-cpf').value
+        CPF_CNPJ: document.getElementById('novo-cpf').value,
+        Senha: document.getElementById('novo-senha').value
     };
     try {
         const res = await fetch(`${API_URL}/clientes`, {
@@ -128,15 +116,13 @@ async function handleNewClient(e) {
         const json = await res.json();
         if(res.ok) {
             showToast('Cliente criado com sucesso!', 'success');
-            // Reset do formulário corrigido pelo ID no HTML
-            const form = document.querySelector('form');
+            const form = document.getElementById('form-novo-cliente');
             if(form) form.reset();
-
             await loadAssessorData();
             document.querySelector('[data-target="view-clientes"]').click();
         } else {
             const msg = json.detalhes || json.erro;
-            showToast(`Erro: ${msg}. Use CPF/Email ÚNICOS.`, 'error');
+            showToast(`Falha ao criar: ${msg}. Use CPF/Email ÚNICOS.`, 'error');
         }
     } catch(e) { showToast('Erro de conexão.', 'error'); }
 }
@@ -197,6 +183,15 @@ async function loadPerfilData() {
             document.getElementById('perfil-status').textContent = perfil.StatusCompliance;
         }
     } catch(e) { console.error(e); }
+}
+
+async function loadExtratoData() {
+    // Implementação para buscar dados de MovimentacaoConta se a rota existir
+    // Por enquanto, mostra um valor padrão.
+    const tbody = document.getElementById('extrato-body');
+    if(tbody) {
+        tbody.innerHTML = `<tr><td>${new Date().toLocaleDateString('pt-BR')}</td><td>Aporte</td><td>Transferência Inicial</td><td style="color:var(--success)">+ ${moneyFormatter.format(100000.00)}</td></tr>`;
+    }
 }
 
 async function loadProdutos() {
